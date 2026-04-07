@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { createClient } from '@/lib/supabase/server'
 import { MessageSquare, Users, Bot, TrendingUp } from 'lucide-react'
 
