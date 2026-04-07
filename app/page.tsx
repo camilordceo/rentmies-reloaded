@@ -177,6 +177,11 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-[#e5e5e5] py-8 text-center text-sm text-[#6b7280]">
         <p>© 2026 Rentmies. Hecho con ❤️ en Colombia.</p>
+        <p className="mt-2">
+          <Link href="/partnerships" className="text-[#40d99d] hover:underline">
+            Alianzas para inmobiliarias
+          </Link>
+        </p>
       </footer>
     </div>
   )
