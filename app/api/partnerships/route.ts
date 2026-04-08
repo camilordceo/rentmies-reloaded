@@ -17,55 +17,33 @@ async function logEvent(level: 'info' | 'warn' | 'error', message: string, conte
   }
 }
 
-async function sendWhatsApp(data: Record<string, string>) {
-  const token = process.env.CALLBELL_TOKEN
-  const phone = process.env.PARTNERSHIPS_NOTIFY_PHONE || '+573103565492'
-  const channelUuid = process.env.CALLBELL_CHANNEL_UUID || ''
+async function notifyBubble(data: Record<string, string>) {
+  const informacion = [
+    `🏢 Nueva aplicación de alianza — Rentmies`,
+    `Nombre: ${data.full_name}`,
+    `Email: ${data.email}`,
+    `Inmobiliaria: ${data.brokerage_name}`,
+    `Ciudad: ${data.city}`,
+    `Asesores: ${data.num_agents}`,
+    `Teléfono: ${data.phone}`,
+    `Canales: ${data.marketing_channels || 'N/A'}`,
+    `Reto de crecimiento: ${data.growth_challenge || 'N/A'}`,
+  ].join(' | ')
 
-  if (!token) {
-    await logEvent('warn', 'CALLBELL_TOKEN no configurado — WhatsApp no enviado')
-    return { ok: false, reason: 'token_missing' }
-  }
-
-  const msg = [
-    '🏢 *Nueva aplicación de alianza - Rentmies*',
-    '',
-    `👤 ${data.full_name}`,
-    `🏠 ${data.brokerage_name}`,
-    `📍 ${data.city}`,
-    `👥 Asesores: ${data.num_agents}`,
-    `📱 ${data.phone}`,
-    `📧 ${data.email}`,
-    '',
-    `📣 Canales: ${data.marketing_channels || 'N/A'}`,
-    `🎯 Reto: ${data.growth_challenge || 'N/A'}`,
-  ].join('\n')
-
-  const payload: Record<string, unknown> = {
-    to: phone,
-    from: 'whatsapp',
-    type: 'text',
-    content: { text: msg },
-  }
-  if (channelUuid) payload.channel_uuid = channelUuid
-
-  const res = await fetch('https://api.callbell.eu/v1/messages/send', {
+  const res = await fetch('https://rentmies.bubbleapps.io/api/1.1/wf/a_landing_partnership7abril', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(payload),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ informacion }),
   })
 
   const responseText = await res.text()
 
   if (!res.ok) {
-    await logEvent('error', `Callbell HTTP ${res.status}`, { status: res.status, body: responseText, payload })
-    return { ok: false, reason: `callbell_${res.status}`, detail: responseText }
+    await logEvent('error', `Bubble webhook HTTP ${res.status}`, { status: res.status, body: responseText })
+    return { ok: false, reason: `bubble_${res.status}`, detail: responseText }
   }
 
-  await logEvent('info', 'WhatsApp enviado correctamente', { to: phone })
+  await logEvent('info', 'Notificación enviada a Bubble correctamente')
   return { ok: true }
 }
 
@@ -114,8 +92,8 @@ export async function POST(req: NextRequest) {
       phone,
     })
 
-    // 2. Send WhatsApp (non-blocking — never fails the request)
-    const waResult = await sendWhatsApp({
+    // 2. Notify via Bubble webhook (non-blocking — never fails the request)
+    const waResult = await notifyBubble({
       full_name: String(full_name),
       brokerage_name: String(brokerage_name),
       city: String(city),
@@ -129,7 +107,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       id: saved?.id,
-      whatsapp: waResult.ok ? 'sent' : `skipped:${waResult.reason}`,
+      notified: waResult.ok ? 'sent' : `failed:${waResult.reason}`,
     })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
