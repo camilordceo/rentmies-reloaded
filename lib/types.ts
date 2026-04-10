@@ -94,3 +94,88 @@ export interface AdminLog {
 export interface ConversationWithContact extends Conversation {
   contacts: Contact | null
 }
+
+// ============================================================
+// WHATSAPP AI — New tables for WhatsApp bot backend
+// ============================================================
+
+export interface WhatsappAI {
+  id: string
+  empresa_id: string
+  empresa_nombre: string
+  assistant_id: string
+  channel_uuid_callbell: string
+  numero_whatsapp: string
+  nombre_agente: string | null
+  activo: boolean
+  configuracion_extra: Record<string, unknown>
+  created_at?: string
+}
+
+export interface WhatsappAIWithEmpresa extends WhatsappAI {
+  empresas: { nombre: string; plan: string } | null
+}
+
+export interface UserConversacion {
+  id: string
+  telefono: string
+  nombre: string | null
+  callbell_contact_uuid: string | null
+  metadata: Record<string, unknown>
+  created_at?: string
+}
+
+export interface Conversacion {
+  id: string
+  whatsapp_ai_id: string
+  user_conversacion_id: string
+  activa: boolean
+  ultimo_mensaje_at: string | null
+  last_response_id: string | null
+  metadata: Record<string, unknown>
+  created_at?: string
+}
+
+export interface ConversacionWithDetails extends Conversacion {
+  whatsapp_ai: WhatsappAI | null
+  user_conversacion: UserConversacion | null
+}
+
+export interface Mensaje {
+  id: string
+  conversacion_id: string
+  rol: 'user' | 'assistant'
+  texto: string
+  callbell_message_uuid: string | null
+  responses_api_correlation_id: string | null
+  metadata: Record<string, unknown>
+  created_at?: string
+}
+
+// ─── Callbell types ──────────────────────────────────────
+
+export interface CallbellWebhookPayload {
+  event: string
+  payload: {
+    to: string
+    from: string
+    text: string | null
+    status: string
+    channel: string
+    contact: {
+      name: string | null
+      uuid: string
+      source: string
+      phoneNumber: string
+      conversationHref: string
+    }
+  }
+}
+
+// ─── Responses API types ─────────────────────────────────
+
+export interface ResponsesAPIResponse {
+  status: string
+  output_text: string
+  next_previous_response_id: string
+}

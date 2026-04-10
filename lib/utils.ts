@@ -92,12 +92,56 @@ export function interpolateTemplate(
   return result
 }
 
-export function formatCurrency(value: string | number): string {
+export function formatCurrency(value: string | number, currency = 'COP'): string {
   const num = typeof value === 'string' ? parseFloat(value) : value
   if (isNaN(num)) return String(value)
   return new Intl.NumberFormat('es-CO', {
     style: 'currency',
-    currency: 'COP',
+    currency,
     maximumFractionDigits: 0,
   }).format(num)
+}
+
+export function normalizePhone(phone: string): string {
+  return phone.replace(/[^\d]/g, '')
+}
+
+export function formatPhone(phone: string): string {
+  const digits = normalizePhone(phone)
+  if (digits.startsWith('57') && digits.length === 12) {
+    return `+57 ${digits.slice(2, 5)} ${digits.slice(5, 8)} ${digits.slice(8)}`
+  }
+  return `+${digits}`
+}
+
+export function formatDate(date: string | Date): string {
+  return new Date(date).toLocaleDateString('es-CO', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+}
+
+export function formatDateTime(date: string | Date): string {
+  return new Date(date).toLocaleString('es-CO', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+export function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((n) => n[0]?.toUpperCase() || '')
+    .join('')
+}
+
+export function truncate(str: string, maxLen: number): string {
+  if (str.length <= maxLen) return str
+  return str.slice(0, maxLen) + '...'
 }
