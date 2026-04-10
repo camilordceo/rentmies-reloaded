@@ -52,7 +52,7 @@ function useTypewriter(phrases: string[]) {
 }
 
 interface HeroSearchProps {
-  empresa: { id: string; nombre: string; ciudad: string | null }
+  empresa: { id: string; nombre: string; ciudad: string | null } | null
   destacadas: any[]
   onSearch: (query: string) => void
 }
@@ -80,7 +80,7 @@ export function HeroSearch({ empresa, destacadas, onSearch }: HeroSearchProps) {
           <div className="w-7 h-7 bg-[#40d99d] rounded-lg flex items-center justify-center">
             <Bot className="w-4 h-4 text-white" />
           </div>
-          <span className="font-medium text-[#1a1a1a] text-sm">{empresa.nombre}</span>
+          <span className="font-medium text-[#1a1a1a] text-sm">{empresa?.nombre ?? 'Rentmies'}</span>
         </div>
       </nav>
 

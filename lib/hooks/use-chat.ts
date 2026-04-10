@@ -10,7 +10,7 @@ export interface ChatMessage {
   timestamp: Date
 }
 
-export function useChat(empresaId: string) {
+export function useChat(empresaId: string | null) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const sessionId = useRef<string>(crypto.randomUUID())
@@ -31,7 +31,7 @@ export function useChat(empresaId: string) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          empresa_id: empresaId,
+          ...(empresaId ? { empresa_id: empresaId } : {}),
           message: text,
           session_id: sessionId.current,
           previous_response_id: responseId.current,

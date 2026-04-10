@@ -5,7 +5,7 @@ import { HeroSearch } from './hero-search'
 import { ChatInterface } from './chat-interface'
 
 interface PortalClientProps {
-  empresa: { id: string; nombre: string; ciudad: string | null }
+  empresa: { id: string; nombre: string; ciudad: string | null } | null
   destacadas: any[]
 }
 

@@ -211,7 +211,7 @@ export interface ResponsesAPIResponse {
 // ─── Property search ─────────────────────────────────────
 
 export interface PropertySearchParams {
-  empresa_id: string
+  empresa_id?: string
   tipo_inmueble?: string
   tipo_negocio?: string
   ciudad?: string

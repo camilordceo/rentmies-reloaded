@@ -16,13 +16,13 @@ const FOLLOW_UPS = [
 ]
 
 interface ChatInterfaceProps {
-  empresa: { id: string; nombre: string; ciudad: string | null }
+  empresa: { id: string; nombre: string; ciudad: string | null } | null
   initialMessage: string
   onBack: () => void
 }
 
 export function ChatInterface({ empresa, initialMessage, onBack }: ChatInterfaceProps) {
-  const { messages, isLoading, sendMessage } = useChat(empresa.id)
+  const { messages, isLoading, sendMessage } = useChat(empresa?.id ?? null)
   const [input, setInput] = useState('')
   const [schedulingProperty, setSchedulingProperty] = useState<any | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -58,7 +58,7 @@ export function ChatInterface({ empresa, initialMessage, onBack }: ChatInterface
           <Bot className="w-4 h-4 text-white" />
         </div>
         <div>
-          <p className="text-sm font-medium text-[#1a1a1a] leading-none">{empresa.nombre}</p>
+          <p className="text-sm font-medium text-[#1a1a1a] leading-none">{empresa?.nombre ?? 'Rentmies'}</p>
           <p className="text-xs text-[#40d99d]">EMA · Agente IA</p>
         </div>
       </div>
@@ -159,7 +159,7 @@ export function ChatInterface({ empresa, initialMessage, onBack }: ChatInterface
       {schedulingProperty && (
         <AgendarCitaForm
           property={schedulingProperty}
-          empresaId={empresa.id}
+          empresaId={empresa?.id ?? ''}
           onClose={() => setSchedulingProperty(null)}
         />
       )}

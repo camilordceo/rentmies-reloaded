@@ -6,27 +6,52 @@ export const maxDuration = 30
 
 export async function POST(req: NextRequest) {
   const { empresa_id, message, session_id, previous_response_id } = await req.json()
-  if (!empresa_id || !message) {
-    return NextResponse.json({ error: 'empresa_id y message requeridos' }, { status: 400 })
-  }
+  if (!message) return NextResponse.json({ error: 'message requerido' }, { status: 400 })
 
   const db = createAdminClient()
 
-  // Get empresa's active AI agent
-  const { data: agente } = await db
-    .from('agentes_ia')
-    .select('*')
-    .eq('empresa_id', empresa_id)
-    .eq('activo', true)
-    .limit(1)
-    .single()
+  // Resolve AI agent — per-empresa or global (PORTAL_ASSISTANT_ID env var)
+  let agente: any = null
+  if (empresa_id) {
+    const { data } = await db
+      .from('agentes_ia')
+      .select('*')
+      .eq('empresa_id', empresa_id)
+      .eq('activo', true)
+      .limit(1)
+      .single()
+    agente = data
+  }
+
+  // Global portal: use any active agent or build a minimal one from env
+  if (!agente) {
+    const portalAssistantId = process.env.PORTAL_ASSISTANT_ID
+    if (portalAssistantId) {
+      agente = {
+        id: 'portal-global',
+        empresa_id: null,
+        assistant_id: portalAssistantId,
+        activo: true,
+        channel_uuid_callbell: null,
+      }
+    } else {
+      // Fallback: first active agent in the system
+      const { data } = await db
+        .from('agentes_ia')
+        .select('*')
+        .eq('activo', true)
+        .limit(1)
+        .single()
+      agente = data
+    }
+  }
 
   if (!agente) {
-    return NextResponse.json({ error: 'No hay agente IA configurado para esta empresa' }, { status: 404 })
+    return NextResponse.json({ error: 'No hay agente IA configurado' }, { status: 404 })
   }
 
   // Find or create portal session conversacion
-  let conversacion: any
+  let conversacion: any = null
   if (session_id) {
     const { data: session } = await db
       .from('portal_sessions')
@@ -35,11 +60,7 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (session?.conversacion_id) {
-      const { data } = await db
-        .from('conversacion')
-        .select('*')
-        .eq('id', session.conversacion_id)
-        .single()
+      const { data } = await db.from('conversacion').select('*').eq('id', session.conversacion_id).single()
       conversacion = data
     }
   }
@@ -48,22 +69,21 @@ export async function POST(req: NextRequest) {
     const { data: newConv } = await db
       .from('conversacion')
       .insert({
-        whatsapp_ai_id: agente.id,
+        whatsapp_ai_id: agente.id === 'portal-global' ? null : agente.id,
         user_conversacion_id: null,
         activa: true,
         ultimo_mensaje_at: new Date().toISOString(),
         last_response_id: previous_response_id ?? null,
-        metadata: { source: 'portal', session_id },
+        metadata: { source: 'portal', session_id, global: !empresa_id },
       })
       .select()
       .single()
     conversacion = newConv
 
-    // Upsert portal session
-    if (session_id) {
+    if (session_id && conversacion) {
       await db.from('portal_sessions').upsert({
         session_id,
-        empresa_id,
+        empresa_id: empresa_id ?? null,
         conversacion_id: conversacion.id,
         last_response_id: null,
         metadata: {},
@@ -71,47 +91,32 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Override last_response_id if provided by client (for threading continuity)
-  if (previous_response_id && !conversacion.last_response_id) {
+  if (previous_response_id && conversacion && !conversacion.last_response_id) {
     conversacion = { ...conversacion, last_response_id: previous_response_id }
   }
 
-  // Save user message
-  await db.from('mensaje').insert({
-    conversacion_id: conversacion.id,
-    rol: 'user',
-    texto: message,
-    metadata: {},
-  })
+  if (conversacion) {
+    await db.from('mensaje').insert({ conversacion_id: conversacion.id, rol: 'user', texto: message, metadata: {} })
+  }
 
-  // Run agent loop
   const result = await processMessage({
-    conversacion,
-    whatsappAI: agente as any,
+    conversacion: conversacion ?? { id: 'temp', whatsapp_ai_id: agente.id, user_conversacion_id: null, activa: true, ultimo_mensaje_at: null, last_response_id: previous_response_id ?? null, metadata: {} },
+    whatsappAI: agente,
     userMessage: message,
   })
 
-  // Save assistant message
-  await db.from('mensaje').insert({
-    conversacion_id: conversacion.id,
-    rol: 'assistant',
-    texto: result.text,
-    responses_api_correlation_id: result.responseId,
-    metadata: {},
-  })
-
-  // Update portal session response_id
-  if (session_id) {
-    await db
-      .from('portal_sessions')
-      .update({ last_response_id: result.responseId })
-      .eq('session_id', session_id)
+  if (conversacion) {
+    await db.from('mensaje').insert({
+      conversacion_id: conversacion.id,
+      rol: 'assistant',
+      texto: result.text,
+      responses_api_correlation_id: result.responseId,
+      metadata: {},
+    })
+    if (session_id) {
+      await db.from('portal_sessions').update({ last_response_id: result.responseId }).eq('session_id', session_id)
+    }
   }
 
-  return NextResponse.json({
-    text: result.text,
-    properties: result.properties,
-    response_id: result.responseId,
-    conversation_id: conversacion.id,
-  })
+  return NextResponse.json({ text: result.text, properties: result.properties, response_id: result.responseId, conversation_id: conversacion?.id })
 }
