@@ -174,8 +174,52 @@ export interface CallbellWebhookPayload {
 
 // ─── Responses API types ─────────────────────────────────
 
+export interface ToolDefinition {
+  type: 'function'
+  name: string
+  description: string
+  parameters: Record<string, unknown>
+}
+
+export interface FunctionCall {
+  type: 'function_call'
+  id: string
+  name: string
+  arguments: string
+}
+
+export interface ToolResult {
+  tool_call_id: string
+  output: string
+}
+
+export interface ResponsesAPIRequest {
+  assistant_id: string
+  content: string
+  previous_response_id?: string | null
+  tools?: ToolDefinition[]
+  tool_results?: ToolResult[]
+}
+
 export interface ResponsesAPIResponse {
-  status: string
-  output_text: string
+  status: 'completed' | 'requires_action' | 'failed'
+  output_text?: string
+  output?: FunctionCall[]
   next_previous_response_id: string
+}
+
+// ─── Property search ─────────────────────────────────────
+
+export interface PropertySearchParams {
+  empresa_id: string
+  tipo_inmueble?: string
+  tipo_negocio?: string
+  ciudad?: string
+  precio_min?: number
+  precio_max?: number
+  habitaciones_min?: number
+  area_min?: number
+  caracteristicas?: string
+  codigo?: string
+  limite?: number
 }
