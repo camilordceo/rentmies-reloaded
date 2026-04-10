@@ -7,15 +7,21 @@ import type { Conversacion, WhatsappAI } from '../types'
 
 const MAX_ITERATIONS = 5
 
+export interface AgentResult {
+  text: string
+  properties: any[]
+  responseId: string
+}
+
 export async function processMessage(params: {
   conversacion: Conversacion
   whatsappAI: WhatsappAI
   userMessage: string
-}): Promise<string> {
+}): Promise<AgentResult> {
   const { conversacion, whatsappAI, userMessage } = params
   const db = createAdminClient()
+  const collectedProperties: any[] = []
 
-  // First call — send user message with tools + threading
   let apiResponse = await callResponsesAPI({
     assistant_id: whatsappAI.assistant_id,
     content: userMessage,
@@ -25,37 +31,35 @@ export async function processMessage(params: {
 
   let iterations = 0
 
-  // Agent loop — execute tools until we get a final text response
   while (apiResponse.status === 'requires_action' && iterations < MAX_ITERATIONS) {
     iterations++
 
     logger.info('orchestrator', 'Agent requesting tools', {
       conversacion_id: conversacion.id,
       empresa_id: whatsappAI.empresa_id,
-      context: {
-        iteration: iterations,
-        tools: apiResponse.output?.map((t) => t.name),
-      },
+      context: { iteration: iterations, tools: apiResponse.output?.map((t) => t.name) },
     } as any)
 
-    // Execute all tool calls in parallel
     const toolResults = await Promise.all(
       (apiResponse.output ?? []).map(async (toolCall) => {
         let result: unknown
         try {
           const args = JSON.parse(toolCall.arguments) as Record<string, unknown>
           result = await executeToolCall(toolCall.name, args, whatsappAI.empresa_id)
+          // Collect property results for portal frontend
+          if (toolCall.name === 'buscar_propiedades' && Array.isArray(result)) {
+            collectedProperties.push(...result)
+          }
+          if (toolCall.name === 'obtener_detalle_propiedad' && result && typeof result === 'object' && !('error' in result)) {
+            collectedProperties.push(result)
+          }
         } catch (err) {
           result = { error: err instanceof Error ? err.message : String(err) }
         }
-        return {
-          tool_call_id: toolCall.id,
-          output: JSON.stringify(result),
-        }
+        return { tool_call_id: toolCall.id, output: JSON.stringify(result) }
       })
     )
 
-    // Send tool results back to the agent
     apiResponse = await callResponsesAPI({
       assistant_id: whatsappAI.assistant_id,
       content: '',
@@ -69,7 +73,6 @@ export async function processMessage(params: {
     throw new Error(`Agent did not complete after ${iterations} iterations. Status: ${apiResponse.status}`)
   }
 
-  // Persist the response ID for next-turn threading
   await db
     .from('conversacion')
     .update({
@@ -78,5 +81,9 @@ export async function processMessage(params: {
     })
     .eq('id', conversacion.id)
 
-  return apiResponse.output_text
+  return {
+    text: apiResponse.output_text,
+    properties: collectedProperties,
+    responseId: apiResponse.next_previous_response_id,
+  }
 }

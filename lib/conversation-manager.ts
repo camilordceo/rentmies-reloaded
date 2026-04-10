@@ -196,11 +196,12 @@ export async function processIncomingMessage(
   // 6. Run agent loop
   let replyText: string
   try {
-    replyText = await processMessage({
+    const result = await processMessage({
       conversacion,
       whatsappAI: agent as any,
       userMessage: combinedText,
     })
+    replyText = result.text
   } catch (err) {
     logger.error('conversation-manager', 'Agent loop failed', {
       empresa_id: agent.empresa_id,
