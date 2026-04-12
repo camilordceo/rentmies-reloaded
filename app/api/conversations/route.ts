@@ -1,23 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
-function getDB() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+async function requireAdmin() {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+
+  const db = createAdminClient()
+  const { data: profile } = await db.from('profiles').select('rol').eq('id', user.id).single()
+  if (profile?.rol !== 'admin') return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+
+  return { db }
 }
 
 // GET /api/conversations — list WhatsApp AI conversations with details
 export async function GET(req: NextRequest) {
-  const supabase = getDB()
+  const auth = await requireAdmin()
+  if (auth.error) return auth.error
+
   const { searchParams } = new URL(req.url)
   const agentId = searchParams.get('whatsapp_ai_id')
   const empresaId = searchParams.get('empresa_id')
   const limit = parseInt(searchParams.get('limit') || '50')
   const offset = parseInt(searchParams.get('offset') || '0')
 
-  let query = supabase
+  let query = auth.db
     .from('conversacion')
     .select(`
       *,

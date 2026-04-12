@@ -1,30 +1,30 @@
-import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
-function createService() {
-  const cookieStore = cookies()
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      cookies: {
-        getAll: () => cookieStore.getAll(),
-        setAll: () => {},
-      },
-    }
-  )
+async function requireAdmin() {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+
+  const db = createAdminClient()
+  const { data: profile } = await db.from('profiles').select('rol').eq('id', user.id).single()
+  if (profile?.rol !== 'admin') return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+
+  return { db }
 }
 
 export async function GET(request: NextRequest) {
+  const auth = await requireAdmin()
+  if (auth.error) return auth.error
+
   const { searchParams } = new URL(request.url)
   const level = searchParams.get('level')
   const source = searchParams.get('source')
   const limit = parseInt(searchParams.get('limit') ?? '100')
   const offset = parseInt(searchParams.get('offset') ?? '0')
 
-  const supabase = createService()
-  let query = supabase
+  let query = auth.db
     .from('admin_logs')
     .select('*')
     .order('created_at', { ascending: false })
@@ -43,6 +43,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await requireAdmin()
+  if (auth.error) return auth.error
+
   try {
     const body = await request.json()
     const { level, source, message, context } = body
@@ -55,8 +58,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'level inválido' }, { status: 400 })
     }
 
-    const supabase = createService()
-    const { data, error } = await supabase
+    const { data, error } = await auth.db
       .from('admin_logs')
       .insert({ level, source, message, context: context ?? null })
       .select()

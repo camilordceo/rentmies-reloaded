@@ -1,20 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
-function getDB() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+async function requireAdmin() {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+
+  const db = createAdminClient()
+  const { data: profile } = await db.from('profiles').select('rol').eq('id', user.id).single()
+  if (profile?.rol !== 'admin') return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+
+  return { db }
 }
 
 // GET /api/agents — list all WhatsApp AI agents
 export async function GET(req: NextRequest) {
-  const supabase = getDB()
+  const auth = await requireAdmin()
+  if (auth.error) return auth.error
+
   const { searchParams } = new URL(req.url)
   const empresaId = searchParams.get('empresa_id')
 
-  let query = supabase
+  let query = auth.db
     .from('whatsapp_ai')
     .select('*, empresas(nombre, plan)')
     .order('created_at', { ascending: false })
@@ -34,7 +42,8 @@ export async function GET(req: NextRequest) {
 
 // POST /api/agents — create new WhatsApp AI agent
 export async function POST(req: NextRequest) {
-  const supabase = getDB()
+  const auth = await requireAdmin()
+  if (auth.error) return auth.error
 
   let body: Record<string, unknown>
   try {
@@ -50,7 +59,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await auth.db
     .from('whatsapp_ai')
     .insert({
       empresa_id: body.empresa_id,

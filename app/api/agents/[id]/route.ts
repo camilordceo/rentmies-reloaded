@@ -1,17 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
-function getDB() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+async function requireAdmin() {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+
+  const db = createAdminClient()
+  const { data: profile } = await db.from('profiles').select('rol').eq('id', user.id).single()
+  if (profile?.rol !== 'admin') return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+
+  return { db }
 }
 
 // GET /api/agents/[id]
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = getDB()
-  const { data, error } = await supabase
+  const auth = await requireAdmin()
+  if (auth.error) return auth.error
+
+  const { data, error } = await auth.db
     .from('whatsapp_ai')
     .select('*, empresas(nombre, plan)')
     .eq('id', params.id)
@@ -26,7 +34,9 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 
 // PATCH /api/agents/[id]
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = getDB()
+  const auth = await requireAdmin()
+  if (auth.error) return auth.error
+
   let body: Record<string, unknown>
   try {
     body = await req.json()
@@ -34,12 +44,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  // Normalize phone if present
   if (body.numero_whatsapp) {
     body.numero_whatsapp = (body.numero_whatsapp as string).replace(/[^\d]/g, '')
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await auth.db
     .from('whatsapp_ai')
     .update(body)
     .eq('id', params.id)
@@ -55,8 +64,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
 // DELETE /api/agents/[id]
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = getDB()
-  const { error } = await supabase.from('whatsapp_ai').delete().eq('id', params.id)
+  const auth = await requireAdmin()
+  if (auth.error) return auth.error
+
+  const { error } = await auth.db.from('whatsapp_ai').delete().eq('id', params.id)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

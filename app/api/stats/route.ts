@@ -1,29 +1,25 @@
-import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function GET() {
-  const cookieStore = cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      cookies: {
-        getAll: () => cookieStore.getAll(),
-        setAll: () => {},
-      },
-    }
-  )
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const db = createAdminClient()
+  const { data: profile } = await db.from('profiles').select('rol').eq('id', user.id).single()
+  if (profile?.rol !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
   const todayStart = new Date()
   todayStart.setHours(0, 0, 0, 0)
 
   const [users, empresas, convs, errors] = await Promise.all([
-    supabase.from('profiles').select('id', { count: 'exact', head: true }),
-    supabase.from('empresas').select('id', { count: 'exact', head: true }).eq('activo', true),
-    supabase.from('conversations').select('id', { count: 'exact', head: true }).gte('created_at', todayStart.toISOString()),
-    supabase.from('admin_logs').select('id', { count: 'exact', head: true }).eq('level', 'error').gte('created_at', yesterday),
+    db.from('profiles').select('id', { count: 'exact', head: true }),
+    db.from('empresas').select('id', { count: 'exact', head: true }).eq('activo', true),
+    db.from('conversations').select('id', { count: 'exact', head: true }).gte('created_at', todayStart.toISOString()),
+    db.from('admin_logs').select('id', { count: 'exact', head: true }).eq('level', 'error').gte('created_at', yesterday),
   ])
 
   return NextResponse.json({
