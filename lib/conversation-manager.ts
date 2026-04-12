@@ -1,18 +1,18 @@
 /**
  * conversation-manager.ts
  * Orchestrates the full WhatsApp AI message flow:
- *  1. Identify agent (whatsapp_ai by destination number)
+ *  1. Identify agent (agentes_ia by destination number)
  *  2. Find/create user_conversacion and conversacion
  *  3. Save incoming user message
  *  4. Anti-spam accumulation (4s window)
  *  5. Run agent loop (orchestrator.ts) — tool-augmented AI
- *  6. Send reply via Callbell
+ *  6. Route outbound reply via WhaRentmies provider abstraction
  *  7. Save assistant message + update conversacion
  */
 
 import { createAdminClient } from './supabase/admin'
 import { normalizePhone } from './phone-utils'
-import { sendWhatsAppMessage } from './callbell'
+import { routeMessage, getProvider, recordCallbellFailure } from './wharentmies/router'
 import { processMessage } from './agent/orchestrator'
 import { logger } from './logger'
 import type {
@@ -140,6 +140,31 @@ async function accumulateMessages(
   return (data ?? []).map((m: { texto: string }) => m.texto)
 }
 
+// ─── Send outbound reply via provider router ─────────────────────────────────
+
+async function sendReply(
+  fromPhone: string,
+  agent: AgenteIA,
+  text: string
+): Promise<string> {
+  const db = createAdminClient()
+  const providerId = await routeMessage(fromPhone, { agentType: 'ai' }, db)
+  const provider = getProvider(providerId)
+
+  try {
+    const result = await provider.sendText(fromPhone, text, {
+      sessionId: agent.channel_uuid_callbell ?? '',
+    })
+    return result.externalId
+  } catch (err) {
+    // Record Callbell failure for circuit breaker
+    if (providerId === 'callbell') {
+      recordCallbellFailure()
+    }
+    throw err
+  }
+}
+
 // ─── Main entry point ────────────────────────────────────────────────────────
 
 export async function processIncomingMessage(
@@ -168,10 +193,11 @@ export async function processIncomingMessage(
 
   // 3. Handle non-text (media) messages
   if (!payload.text) {
-    await sendWhatsAppMessage({
-      to: fromPhone,
-      channelUuid: agent.channel_uuid_callbell ?? '',
-      text: NO_TEXT_REPLY,
+    await sendReply(fromPhone, agent, NO_TEXT_REPLY).catch(() => {
+      logger.warn('conversation-manager', 'Failed to send media reply', {
+        empresa_id: agent.empresa_id,
+        conversacion_id: conversacion.id,
+      })
     })
     return
   }
@@ -211,19 +237,24 @@ export async function processIncomingMessage(
     replyText = ERROR_REPLY
   }
 
-  // 7. Send reply via Callbell
-  const callbellResp = await sendWhatsAppMessage({
-    to: fromPhone,
-    channelUuid: agent.channel_uuid_callbell ?? '',
-    text: replyText,
-  })
+  // 7. Send reply via provider router
+  let externalMessageId: string | null = null
+  try {
+    externalMessageId = await sendReply(fromPhone, agent, replyText)
+  } catch (err) {
+    logger.error('conversation-manager', 'Failed to send reply', {
+      empresa_id: agent.empresa_id,
+      conversacion_id: conversacion.id,
+      context: { error: err instanceof Error ? err.message : String(err) },
+    })
+  }
 
   // 8. Save assistant message
   await db.from('mensaje').insert({
     conversacion_id: conversacion.id,
     rol: 'assistant',
     texto: replyText,
-    callbell_message_uuid: callbellResp.message?.uuid ?? null,
+    callbell_message_uuid: externalMessageId,
     metadata: {},
   })
 

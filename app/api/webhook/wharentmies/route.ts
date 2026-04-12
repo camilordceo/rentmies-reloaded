@@ -89,7 +89,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           event: event.event,
           error: err instanceof Error ? err.message : String(err),
         },
-      } as any)
+      })
     })
   }
 
@@ -127,7 +127,7 @@ async function processEvent(event: WassengerEvent): Promise<void> {
 
   logger.info('wharentmies-webhook', `Event: ${event.event}`, {
     context: { event_type: event.event, phone_hash: hashPhone(phone) },
-  } as any)
+  })
 
   // 2. For inbound messages only — trigger AI pipeline
   if (event.event !== 'message:in:new') return
