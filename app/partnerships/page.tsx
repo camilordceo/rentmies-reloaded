@@ -7,8 +7,7 @@ export const metadata: Metadata = {
 }
 
 const css = `
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-:root{--teal:#40d99d;--teal-90:rgba(64,217,157,.9);--teal-10:rgba(64,217,157,.1);--teal-05:rgba(64,217,157,.05);--teal-glow:rgba(64,217,157,.2);--mint:#4fffb4;--lgray:#e5e5e5;--mgray:#f0f0f0;--black:#1a1a1a;--bg:#fff;--bg2:#f8f8f8;--muted:#6b7280;--sec:#9ca3af;--r-lg:8px;--r-xl:12px;--r-full:9999px}
+:root{--teal:#40d99d;--teal-90:rgba(64,217,157,.9);--teal-10:rgba(64,217,157,.1);--teal-05:rgba(64,217,157,.05);--teal-glow:rgba(64,217,157,.2);--mint:#4fffb4;--green:#006c4a;--green-90:rgba(0,108,74,.9);--green-glow:rgba(0,108,74,.2);--lgray:#e5e5e5;--mgray:#f0f0f0;--black:#1a1a1a;--bg:#fcf9f8;--bg2:#f0ede8;--muted:#6b7280;--sec:#9ca3af;--r-lg:8px;--r-xl:12px;--r-full:9999px}
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}
 body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--black);background:var(--bg);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 a{text-decoration:none;color:inherit}button{font-family:inherit;cursor:pointer;border:none;background:none}
@@ -17,13 +16,13 @@ h1{font-size:clamp(2rem,5.5vw,3.2rem);font-weight:500;line-height:1.08;letter-sp
 h2{font-size:clamp(1.4rem,3.5vw,2.2rem);font-weight:500;line-height:1.15;letter-spacing:-.02em}
 h3{font-size:1.125rem;font-weight:500;line-height:1.4}p{font-size:1rem;line-height:1.7}
 .scroll-progress{position:fixed;top:0;left:0;right:0;height:3px;background:var(--teal);transform-origin:left;transform:scaleX(0);z-index:9999}
-.btn-p{display:inline-flex;align-items:center;gap:8px;background:var(--teal);color:#fff;font-weight:500;font-size:.9375rem;padding:12px 28px;border-radius:var(--r-lg);transition:transform 150ms,box-shadow 150ms,background 200ms;min-height:44px}
-.btn-p:hover{background:var(--teal-90);transform:translateY(-1px);box-shadow:0 4px 16px var(--teal-glow)}.btn-p:active{transform:translateY(0) scale(.98);box-shadow:none}
+.btn-p{display:inline-flex;align-items:center;gap:8px;background:var(--green);color:#fff;font-weight:600;font-size:.9375rem;padding:12px 28px;border-radius:var(--r-lg);transition:transform 150ms,box-shadow 150ms,background 200ms;min-height:44px}
+.btn-p:hover{background:var(--green-90);transform:translateY(-1px);box-shadow:0 4px 16px var(--green-glow)}.btn-p:active{transform:translateY(0) scale(.98);box-shadow:none}
 .btn-s{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--black);font-weight:500;font-size:.9375rem;padding:12px 28px;border-radius:var(--r-lg);border:1px solid var(--lgray);transition:all 200ms;min-height:44px}
 .btn-s:hover{border-color:var(--teal);color:var(--teal)}.btn-lg{padding:14px 36px;font-size:1rem}
 .arrow-i{width:16px;height:16px}
 .tag{display:inline-flex;align-items:center;gap:6px;font-size:.8125rem;font-weight:500;color:var(--teal);background:var(--teal-10);padding:6px 14px;border-radius:var(--r-full);border:1px solid rgba(64,217,157,.15);margin-bottom:16px}.tag svg{width:14px;height:14px}
-nav{position:fixed;top:3px;left:0;right:0;z-index:100;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(255,255,255,.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--lgray);transition:box-shadow 200ms}
+nav{position:fixed;top:3px;left:0;right:0;z-index:100;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(252,249,248,.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid rgba(0,0,0,.06);transition:box-shadow 200ms}
 .logo{font-size:1.25rem;font-weight:600;letter-spacing:-.02em}.logo span{color:var(--teal)}
 .nav-r{display:flex;align-items:center;gap:24px}.nav-l{font-size:.875rem;font-weight:500;color:var(--muted);transition:color 200ms}.nav-l:hover{color:var(--black)}
 @media(max-width:768px){.nav-desk{display:none}.nav-r{gap:12px}}
@@ -111,8 +110,8 @@ footer{padding:32px 0;border-top:1px solid var(--lgray);text-align:center}footer
 [data-reveal-d="1"]{transition-delay:80ms}[data-reveal-d="2"]{transition-delay:160ms}[data-reveal-d="3"]{transition-delay:240ms}[data-reveal-d="4"]{transition-delay:320ms}
 @media(prefers-reduced-motion:reduce){[data-reveal]{transition-duration:.01ms!important;opacity:1!important;transform:none!important}}
 a:focus-visible,button:focus-visible{outline:2px solid var(--teal);outline-offset:2px;border-radius:4px}
-.modal-overlay{position:fixed;inset:0;background:rgba(26,26,26,.5);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity 300ms}.modal-overlay.active{opacity:1;pointer-events:all}
-.modal-box{background:#fff;border-radius:var(--r-xl);max-width:520px;width:100%;max-height:90vh;overflow-y:auto;padding:40px;box-shadow:0 20px 60px rgba(0,0,0,.12);transform:translateY(20px) scale(.97);transition:transform 300ms cubic-bezier(.16,1,.3,1);position:relative}.modal-overlay.active .modal-box{transform:none}
+.modal-overlay{position:fixed;inset:0;background:rgba(26,26,26,.4);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity 300ms}.modal-overlay.active{opacity:1;pointer-events:all}
+.modal-box{background:#fcf9f8;border-radius:16px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;padding:40px;box-shadow:0 32px 64px -12px rgba(28,27,27,.12);transform:translateY(20px) scale(.97);transition:transform 300ms cubic-bezier(.16,1,.3,1);position:relative}.modal-overlay.active .modal-box{transform:none}
 .modal-close{position:absolute;top:16px;right:16px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:var(--r-lg);color:var(--muted);transition:background 200ms,color 200ms}.modal-close:hover{background:var(--mgray);color:var(--black)}.modal-close svg{width:20px;height:20px}
 .modal-box h2{font-size:1.5rem;margin-bottom:4px}.modal-box .modal-sub{color:var(--muted);font-size:.9375rem;margin-bottom:28px}
 .form-group{margin-bottom:20px}.form-label{display:block;font-size:.875rem;font-weight:500;margin-bottom:6px}.form-label .req{color:#dc2626}

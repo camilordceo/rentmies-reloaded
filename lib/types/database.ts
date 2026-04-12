@@ -342,7 +342,7 @@ export interface Etiqueta {
 
 // ─── Agentes IA ──────────────────────────────────────────
 
-export type CanalAgente = 'whatsapp' | 'voz' | 'web_chat'
+export type CanalAgente = 'whatsapp' | 'voz' | 'web_chat' | 'facebook_messenger'
 
 export interface AgenteIA {
   id: string
@@ -538,4 +538,55 @@ export interface PropertySearchParams {
   caracteristicas?: string
   codigo?: string
   limite?: number
+}
+
+// ─── Facebook Messenger ───────────────────────────────────
+
+export interface FacebookPage {
+  id: string
+  empresa_id: string
+  page_id: string
+  page_name: string | null
+  page_access_token: string
+  is_active: boolean
+  connected_at: string
+  created_at: string
+  updated_at: string
+}
+
+export type FacebookConversationStatus = 'active' | 'closed' | 'ai_handling' | 'human_handling'
+
+export interface FacebookConversation {
+  id: string
+  empresa_id: string
+  facebook_page_id: string | null
+  lead_id: string | null
+  user_psid: string
+  user_name: string | null
+  status: FacebookConversationStatus
+  last_message_at: string | null
+  window_expires_at: string | null
+  metadata: Record<string, unknown>
+  created_at: string
+  updated_at: string
+}
+
+export type FacebookMessageDirection = 'inbound' | 'outbound'
+export type FacebookMessageSenderType = 'lead' | 'agent' | 'ai'
+
+export interface FacebookMessage {
+  id: string
+  conversation_id: string
+  empresa_id: string
+  direction: FacebookMessageDirection
+  message_text: string | null
+  message_mid: string | null
+  sender_type: FacebookMessageSenderType | null
+  metadata: Record<string, unknown>
+  created_at: string
+}
+
+export interface FacebookConversationWithDetails extends FacebookConversation {
+  facebook_pages: Pick<FacebookPage, 'page_name' | 'page_id'> | null
+  latest_message: FacebookMessage | null
 }

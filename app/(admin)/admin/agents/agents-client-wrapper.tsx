@@ -43,29 +43,29 @@ export function AgentsClientWrapper({ agents, countMap }: AgentsClientWrapperPro
   }
 
   return (
-    <div>
+    <div className="space-y-4">
       {/* Filters */}
-      <div className="flex items-center gap-3 mb-5">
+      <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6b7280]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface/40" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar agente..."
-            className="w-full h-9 pl-9 pr-3 border border-[#e5e5e5] rounded-lg text-sm text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#40d99d]"
+            className="w-full h-9 pl-9 pr-3 bg-surface-container rounded-lg text-sm text-on-surface placeholder:text-on-surface/35 outline-none focus:ring-2 focus:ring-brand-teal/30 transition-all"
           />
         </div>
 
-        <div className="flex items-center gap-1 bg-[#f0f0f0] rounded-lg p-1">
+        <div className="flex items-center gap-1 bg-surface-container rounded-xl p-1">
           {(['all', 'active', 'inactive'] as const).map((s) => (
             <button
               key={s}
               onClick={() => setFilterStatus(s)}
-              className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
                 filterStatus === s
-                  ? 'bg-white text-[#1a1a1a] shadow-sm'
-                  : 'text-[#6b7280] hover:text-[#1a1a1a]'
+                  ? 'bg-surface-container-lowest text-on-surface shadow-editorial'
+                  : 'text-on-surface/50 hover:text-on-surface'
               }`}
             >
               {s === 'all' ? 'Todos' : s === 'active' ? 'Activos' : 'Inactivos'}
@@ -76,7 +76,7 @@ export function AgentsClientWrapper({ agents, countMap }: AgentsClientWrapperPro
 
       {/* Grid */}
       {filtered.length === 0 ? (
-        <p className="text-sm text-[#6b7280] text-center py-12">No se encontraron agentes</p>
+        <p className="text-sm text-on-surface/40 text-center py-12">No se encontraron agentes</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filtered.map((agent) => (

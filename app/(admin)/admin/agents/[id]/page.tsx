@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { notFound } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { ArrowLeft, MessageSquare } from 'lucide-react'
+import { ArrowLeft, MessageSquare, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { AgentForm } from '@/components/agents/agent-form'
 import { AgentStatusBadge } from '@/components/agents/agent-status-badge'
@@ -40,73 +40,83 @@ export default async function AgentDetailPage({ params }: { params: { id: string
 
   return (
     <div className="max-w-5xl mx-auto">
+      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <Link href="/admin/agents" className="text-[#6b7280] hover:text-[#1a1a1a] transition-colors">
-          <ArrowLeft className="w-5 h-5" />
+        <Link
+          href="/admin/agents"
+          className="p-2 hover:bg-surface-container rounded-lg transition-colors text-on-surface/40 hover:text-on-surface"
+        >
+          <ArrowLeft className="w-4 h-4" />
         </Link>
         <div className="flex-1">
+          <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-authority-green mb-0.5">AGENTES IA</p>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-medium text-[#1a1a1a]">
+            <div className="w-6 h-6 bg-brand-teal/10 rounded-lg flex items-center justify-center">
+              <Sparkles className="w-3.5 h-3.5 text-brand-teal" />
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-on-surface">
               {agent.nombre || 'Agente sin nombre'}
             </h1>
             <AgentStatusBadge activo={agent.activo} />
           </div>
-          <p className="text-sm text-[#6b7280] mt-0.5">{agent.empresa_nombre}</p>
+          <p className="text-sm text-on-surface/40 mt-0.5 ml-8">{agent.empresa_nombre}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Form */}
         <div className="lg:col-span-2">
-          <div className="bg-white border border-[#e5e5e5] rounded-xl p-6 shadow-sm">
+          <div className="bg-surface-container-lowest rounded-xl p-6 shadow-editorial">
             <AgentForm agent={agent} empresas={empresas} mode="edit" />
           </div>
         </div>
 
         {/* Stats panel */}
         <div className="space-y-4">
-          <div className="bg-white border border-[#e5e5e5] rounded-xl p-5 shadow-sm">
-            <h3 className="text-sm font-medium text-[#1a1a1a] mb-4">Estadísticas</h3>
+          <div className="bg-surface-container-lowest rounded-xl p-5 shadow-editorial">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface/40 mb-4">Estadísticas</p>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-[#6b7280]">Total conversaciones</span>
-                <span className="text-sm font-medium text-[#1a1a1a]">{totalConvs ?? 0}</span>
+                <span className="text-xs text-on-surface/50">Total conversaciones</span>
+                <span className="text-sm font-bold text-authority-green">{totalConvs ?? 0}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-[#6b7280]">Conversaciones activas</span>
-                <span className="text-sm font-medium text-[#40d99d]">{activeConvs ?? 0}</span>
+              <div className="flex items-center justify-between border-t border-outline-variant/10 pt-3">
+                <span className="text-xs text-on-surface/50">Conversaciones activas</span>
+                <span className="text-sm font-bold text-brand-teal">{activeConvs ?? 0}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-[#6b7280]">Mensajes último mes</span>
-                <span className="text-sm font-medium text-[#1a1a1a]">{recentMessages ?? 0}</span>
+              <div className="flex items-center justify-between border-t border-outline-variant/10 pt-3">
+                <span className="text-xs text-on-surface/50">Mensajes último mes</span>
+                <span className="text-sm font-bold text-on-surface">{recentMessages ?? 0}</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-white border border-[#e5e5e5] rounded-xl p-5 shadow-sm">
-            <h3 className="text-sm font-medium text-[#1a1a1a] mb-3">Configuración</h3>
-            <div className="space-y-2">
+          <div className="bg-surface-container-lowest rounded-xl p-5 shadow-editorial">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface/40 mb-3">Configuración</p>
+            <div className="space-y-3">
               <div>
-                <p className="text-xs text-[#6b7280] mb-0.5">Assistant ID</p>
-                <p className="text-xs font-mono text-[#1a1a1a] break-all">{agent.assistant_id}</p>
+                <p className="text-[10px] text-on-surface/40 uppercase tracking-widest mb-0.5">Assistant ID</p>
+                <p className="text-xs font-mono text-on-surface/60 break-all bg-surface-container rounded-lg px-2 py-1.5">{agent.assistant_id}</p>
               </div>
               <div>
-                <p className="text-xs text-[#6b7280] mb-0.5">Channel UUID</p>
-                <p className="text-xs font-mono text-[#1a1a1a] break-all">{agent.channel_uuid_callbell}</p>
+                <p className="text-[10px] text-on-surface/40 uppercase tracking-widest mb-0.5">Channel UUID</p>
+                <p className="text-xs font-mono text-on-surface/60 break-all bg-surface-container rounded-lg px-2 py-1.5">{agent.channel_uuid_callbell}</p>
               </div>
               <div>
-                <p className="text-xs text-[#6b7280] mb-0.5">Número WhatsApp</p>
-                <p className="text-xs font-mono text-[#1a1a1a]">+{agent.numero_whatsapp}</p>
+                <p className="text-[10px] text-on-surface/40 uppercase tracking-widest mb-0.5">Número WhatsApp</p>
+                <p className="text-xs font-mono text-on-surface/60 bg-surface-container rounded-lg px-2 py-1.5">+{agent.numero_whatsapp}</p>
               </div>
             </div>
           </div>
 
           <Link
             href="/admin/wa-conversations"
-            className="flex items-center gap-2 p-4 bg-white border border-[#e5e5e5] rounded-xl shadow-sm hover:border-[#40d99d] transition-all text-sm text-[#1a1a1a]"
+            className="flex items-center gap-2 p-4 bg-surface-container-lowest rounded-xl shadow-editorial hover:shadow-glow-subtle transition-all group"
           >
-            <MessageSquare className="w-4 h-4 text-[#40d99d]" />
-            Ver conversaciones
+            <div className="w-8 h-8 bg-brand-teal/10 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-brand-teal/20 transition-colors">
+              <MessageSquare className="w-4 h-4 text-brand-teal" />
+            </div>
+            <span className="text-sm font-semibold text-on-surface">Ver conversaciones</span>
           </Link>
         </div>
       </div>

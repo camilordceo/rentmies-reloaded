@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { AgentForm } from '@/components/agents/agent-form'
 import type { Empresa } from '@/lib/types'
@@ -16,17 +16,27 @@ export default async function NewAgentPage() {
 
   return (
     <div className="max-w-3xl mx-auto">
+      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <Link href="/admin/agents" className="text-[#6b7280] hover:text-[#1a1a1a] transition-colors">
-          <ArrowLeft className="w-5 h-5" />
+        <Link
+          href="/admin/agents"
+          className="p-2 hover:bg-surface-container rounded-lg transition-colors text-on-surface/40 hover:text-on-surface"
+        >
+          <ArrowLeft className="w-4 h-4" />
         </Link>
         <div>
-          <h1 className="text-2xl font-medium text-[#1a1a1a]">Nuevo agente AI</h1>
-          <p className="text-sm text-[#6b7280] mt-0.5">Configura un nuevo agente de WhatsApp</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-authority-green mb-0.5">AGENTES IA</p>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-brand-teal/10 rounded-lg flex items-center justify-center">
+              <Sparkles className="w-3.5 h-3.5 text-brand-teal" />
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-on-surface">Nuevo agente AI</h1>
+          </div>
+          <p className="text-sm text-on-surface/40 mt-0.5 ml-8">Configura un nuevo agente de WhatsApp</p>
         </div>
       </div>
 
-      <div className="bg-white border border-[#e5e5e5] rounded-xl p-6 shadow-sm">
+      <div className="bg-surface-container-lowest rounded-xl p-6 shadow-editorial">
         <AgentForm empresas={empresas as Empresa[]} mode="create" />
       </div>
     </div>

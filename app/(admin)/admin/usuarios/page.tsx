@@ -12,12 +12,11 @@ export default async function UsuariosPage() {
     .order('created_at', { ascending: false })
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-xl font-medium text-[#1a1a1a]">Usuarios</h1>
-        <p className="text-sm text-[#6b7280] mt-0.5">
-          {profiles?.length ?? 0} usuarios registrados
-        </p>
+    <div className="max-w-6xl mx-auto space-y-6">
+      <div>
+        <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-authority-green mb-1">GESTIÓN</p>
+        <h1 className="text-3xl font-bold tracking-tight text-on-surface">Usuarios</h1>
+        <p className="text-on-surface/50 text-sm mt-1">{profiles?.length ?? 0} usuarios registrados</p>
       </div>
       <UsersTable initialProfiles={profiles ?? []} />
     </div>

@@ -44,26 +44,26 @@ export function UsersTable({ initialProfiles }: UsersTableProps) {
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#6b7280]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface/40" />
           <input
             type="text"
             placeholder="Buscar usuario..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-9 pl-9 pr-3 text-sm bg-white border border-[#e5e5e5] rounded-lg text-[#1a1a1a] focus:outline-none focus:border-[#40d99d]"
+            className="w-full h-9 pl-9 pr-3 text-sm bg-surface-container rounded-lg text-on-surface placeholder:text-on-surface/35 outline-none focus:ring-2 focus:ring-brand-teal/30 transition-all"
           />
         </div>
 
-        <div className="flex gap-1.5">
+        <div className="flex gap-1.5 bg-surface-container rounded-xl p-1">
           {['all', 'admin', 'agent', 'user'].map((role) => (
             <button
               key={role}
               onClick={() => setRoleFilter(role)}
               className={cn(
-                'px-3 py-1.5 text-xs rounded-lg transition-colors capitalize',
+                'px-3 py-1.5 text-xs rounded-lg transition-all capitalize font-medium',
                 roleFilter === role
-                  ? 'bg-[#1a1a1a] text-white'
-                  : 'bg-white border border-[#e5e5e5] text-[#6b7280] hover:bg-[#f8f8f8]'
+                  ? 'bg-surface-container-lowest text-on-surface shadow-editorial'
+                  : 'text-on-surface/50 hover:text-on-surface'
               )}
             >
               {role === 'all' ? 'Todos' : role}
@@ -71,50 +71,43 @@ export function UsersTable({ initialProfiles }: UsersTableProps) {
           ))}
         </div>
 
-        <span className="text-xs text-[#6b7280] ml-auto">
+        <span className="text-xs text-on-surface/40 ml-auto">
           {filtered.length} usuario{filtered.length !== 1 ? 's' : ''}
         </span>
       </div>
 
-      <div className="bg-white rounded-xl border border-[#e5e5e5] shadow-sm overflow-hidden">
+      <div className="bg-surface-container-lowest rounded-xl shadow-editorial overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#e5e5e5] bg-[#f8f8f8]">
-                <th className="text-left px-4 py-3 text-xs font-medium text-[#6b7280] uppercase tracking-wide">
-                  Usuario
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-[#6b7280] uppercase tracking-wide">
-                  Rol
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-[#6b7280] uppercase tracking-wide hidden md:table-cell">
-                  Registrado
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-[#6b7280] uppercase tracking-wide">
-                  Estado
-                </th>
+              <tr className="bg-surface-container">
+                {['Usuario', 'Rol', 'Registrado', 'Estado'].map((h) => (
+                  <th key={h} className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-on-surface/40 last:hidden last:md:table-cell">
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#e5e5e5]">
+            <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="text-center py-12 text-[#6b7280] text-sm">
+                  <td colSpan={4} className="text-center py-12 text-on-surface/40 text-sm">
                     No hay usuarios con este filtro
                   </td>
                 </tr>
               ) : (
-                filtered.map((profile) => (
-                  <tr key={profile.id} className="hover:bg-[#f8f8f8] transition-colors">
+                filtered.map((profile, i) => (
+                  <tr key={profile.id} className={`hover:bg-surface-container-low transition-colors ${i > 0 ? 'border-t border-outline-variant/10' : ''}`}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-[#40d99d]/10 flex items-center justify-center flex-shrink-0">
-                          <span className="text-xs font-medium text-[#40d99d]">
+                        <div className="w-8 h-8 rounded-full bg-brand-teal/10 flex items-center justify-center flex-shrink-0">
+                          <span className="text-xs font-bold text-brand-teal">
                             {(profile.nombre ?? profile.email ?? '?')[0].toUpperCase()}
                           </span>
                         </div>
                         <div>
-                          <p className="font-medium text-[#1a1a1a]">{profile.nombre ?? '—'}</p>
-                          <p className="text-xs text-[#6b7280]">{profile.email}</p>
+                          <p className="font-semibold text-on-surface">{profile.nombre ?? '—'}</p>
+                          <p className="text-xs text-on-surface/50">{profile.email}</p>
                         </div>
                       </div>
                     </td>
@@ -122,14 +115,14 @@ export function UsersTable({ initialProfiles }: UsersTableProps) {
                       <select
                         value={profile.rol}
                         onChange={(e) => handleChangeRole(profile.id, e.target.value)}
-                        className="text-xs px-2 py-1 rounded-lg border border-[#e5e5e5] bg-white text-[#1a1a1a] focus:outline-none focus:border-[#40d99d]"
+                        className="text-xs px-2 py-1.5 bg-surface-container rounded-lg text-on-surface outline-none focus:ring-2 focus:ring-brand-teal/30 transition-all"
                       >
                         <option value="admin">admin</option>
                         <option value="agent">agent</option>
                         <option value="user">user</option>
                       </select>
                     </td>
-                    <td className="px-4 py-3 text-xs text-[#6b7280] hidden md:table-cell">
+                    <td className="px-4 py-3 text-xs text-on-surface/50 hidden md:table-cell">
                       {new Date(profile.created_at).toLocaleDateString('es-CO', {
                         day: 'numeric',
                         month: 'short',
@@ -141,12 +134,12 @@ export function UsersTable({ initialProfiles }: UsersTableProps) {
                         onClick={() => handleToggleActive(profile.id, profile.activo)}
                         className={cn(
                           'relative inline-flex h-5 w-9 items-center rounded-full transition-colors',
-                          profile.activo ? 'bg-[#40d99d]' : 'bg-[#e5e5e5]'
+                          profile.activo ? 'bg-brand-teal' : 'bg-surface-container-highest'
                         )}
                       >
                         <span
                           className={cn(
-                            'inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform',
+                            'inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform shadow',
                             profile.activo ? 'translate-x-4' : 'translate-x-1'
                           )}
                         />

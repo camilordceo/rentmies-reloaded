@@ -45,7 +45,7 @@ export function RegistroForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-[#1a1a1a]" htmlFor="nombre">
+        <label className="text-xs font-medium text-on-surface/50" htmlFor="nombre">
           Nombre completo
         </label>
         <input
@@ -55,12 +55,12 @@ export function RegistroForm() {
           onChange={(e) => setNombre(e.target.value)}
           placeholder="Ana Martínez"
           required
-          className="w-full h-10 px-3 rounded-lg border border-[#e5e5e5] bg-[#f0f0f0] text-sm text-[#1a1a1a] placeholder:text-[#6b7280] focus:outline-none focus:border-[#40d99d] focus:ring-1 focus:ring-[#40d99d] transition-colors"
+          className="w-full h-10 px-3 bg-surface-container rounded-lg text-sm text-on-surface placeholder:text-on-surface/35 outline-none focus:ring-2 focus:ring-brand-teal/30 transition-all"
         />
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-[#1a1a1a]" htmlFor="email">
+        <label className="text-xs font-medium text-on-surface/50" htmlFor="email">
           Email
         </label>
         <input
@@ -70,12 +70,12 @@ export function RegistroForm() {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="tu@inmobiliaria.com"
           required
-          className="w-full h-10 px-3 rounded-lg border border-[#e5e5e5] bg-[#f0f0f0] text-sm text-[#1a1a1a] placeholder:text-[#6b7280] focus:outline-none focus:border-[#40d99d] focus:ring-1 focus:ring-[#40d99d] transition-colors"
+          className="w-full h-10 px-3 bg-surface-container rounded-lg text-sm text-on-surface placeholder:text-on-surface/35 outline-none focus:ring-2 focus:ring-brand-teal/30 transition-all"
         />
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-[#1a1a1a]" htmlFor="password">
+        <label className="text-xs font-medium text-on-surface/50" htmlFor="password">
           Contraseña
         </label>
         <input
@@ -85,25 +85,25 @@ export function RegistroForm() {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Mínimo 6 caracteres"
           required
-          className="w-full h-10 px-3 rounded-lg border border-[#e5e5e5] bg-[#f0f0f0] text-sm text-[#1a1a1a] placeholder:text-[#6b7280] focus:outline-none focus:border-[#40d99d] focus:ring-1 focus:ring-[#40d99d] transition-colors"
+          className="w-full h-10 px-3 bg-surface-container rounded-lg text-sm text-on-surface placeholder:text-on-surface/35 outline-none focus:ring-2 focus:ring-brand-teal/30 transition-all"
         />
       </div>
 
       {error && (
-        <p className="text-xs text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-          {error}
-        </p>
+        <div className="px-3 py-2.5 bg-red-50 rounded-lg">
+          <p className="text-xs text-red-600">{error}</p>
+        </div>
       )}
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full h-10 bg-[#40d99d] text-white rounded-lg text-sm font-medium hover:bg-[#4fffb4] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        className="w-full h-11 bg-authority-green text-white rounded-lg text-sm font-semibold hover:bg-authority-green/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? 'Creando cuenta...' : 'Crear cuenta'}
       </button>
 
-      <p className="text-xs text-[#6b7280] text-center">
+      <p className="text-xs text-on-surface/40 text-center">
         Al registrarte aceptas nuestros términos de servicio.
       </p>
     </form>

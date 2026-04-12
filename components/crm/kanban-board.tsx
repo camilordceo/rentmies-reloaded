@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
-import { Plus, Phone, MessageSquare, MoreVertical, Users } from 'lucide-react'
+import { Plus, Phone, MessageSquare, MoreVertical } from 'lucide-react'
 import { formatRelativeTime } from '@/lib/utils'
 import type { Lead, PipelineEtapa, Agente } from '@/lib/types/database'
 
@@ -44,54 +44,72 @@ export function KanbanBoard({ etapas, leads, onLeadMove, onNewLead }: KanbanBoar
               {/* Column header */}
               <div className="flex items-center justify-between mb-3 px-1">
                 <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: etapa.color }} />
-                  <span className="text-sm font-medium text-[#1a1a1a]">{etapa.nombre}</span>
-                  <span className="text-xs text-[#6b7280] bg-[#f0f0f0] px-1.5 py-0.5 rounded-full">{etapaLeads.length}</span>
+                  <div className="w-2 h-2 rounded-full" style={{ background: etapa.color }} />
+                  <span className="text-xs font-semibold text-on-surface">{etapa.nombre}</span>
+                  <span className="text-[10px] font-bold text-on-surface/40 bg-surface-container px-1.5 py-0.5 rounded-full">
+                    {etapaLeads.length}
+                  </span>
                 </div>
-                <button className="text-[#6b7280] hover:text-[#1a1a1a] transition-colors">
+                <button className="text-on-surface/30 hover:text-on-surface transition-colors">
                   <MoreVertical className="w-4 h-4" />
                 </button>
               </div>
 
               <Droppable droppableId={etapa.id}>
                 {(provided, snapshot) => (
-                  <div ref={provided.innerRef} {...provided.droppableProps}
-                    className={`min-h-32 rounded-xl space-y-2 transition-colors ${snapshot.isDraggingOver ? 'bg-[#40d99d]/5' : 'bg-[#f8f8f8]'} p-2`}>
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className={`min-h-32 rounded-xl space-y-2 transition-colors p-2 ${snapshot.isDraggingOver ? 'bg-brand-teal/5' : 'bg-surface-container-low'}`}
+                  >
                     {etapaLeads.map((lead, idx) => (
                       <Draggable key={lead.id} draggableId={lead.id} index={idx}>
                         {(prov, snap) => (
-                          <div ref={prov.innerRef} {...prov.draggableProps} {...prov.dragHandleProps}
-                            className={`bg-white border rounded-xl p-3 shadow-sm transition-all cursor-grab active:cursor-grabbing ${snap.isDragging ? 'shadow-md border-[#40d99d] rotate-1' : 'border-[#e5e5e5] hover:border-[#40d99d]/50'}`}>
+                          <div
+                            ref={prov.innerRef}
+                            {...prov.draggableProps}
+                            {...prov.dragHandleProps}
+                            className={`bg-surface-container-lowest rounded-xl p-3 transition-all cursor-grab active:cursor-grabbing ${snap.isDragging ? 'shadow-glow-subtle rotate-1' : 'shadow-editorial hover:shadow-glow-subtle'}`}
+                          >
                             <div className="flex items-start justify-between mb-2">
-                              <p className="text-sm font-medium text-[#1a1a1a] leading-tight">{lead.nombre}</p>
-                              <button className="text-[#6b7280] hover:text-[#1a1a1a] ml-2 flex-shrink-0"><MoreVertical className="w-3.5 h-3.5" /></button>
+                              <p className="text-sm font-semibold text-on-surface leading-tight">{lead.nombre}</p>
+                              <button className="text-on-surface/30 hover:text-on-surface ml-2 flex-shrink-0 transition-colors">
+                                <MoreVertical className="w-3.5 h-3.5" />
+                              </button>
                             </div>
+
                             {lead.telefono && (
-                              <p className="text-xs text-[#6b7280] flex items-center gap-1 mb-2"><Phone className="w-3 h-3" />{lead.telefono}</p>
+                              <p className="text-xs text-on-surface/50 flex items-center gap-1 mb-2">
+                                <Phone className="w-3 h-3" />{lead.telefono}
+                              </p>
                             )}
+
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-1.5">
-                                {lead.etiquetas?.slice(0,1).map(tag => (
-                                  <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#40d99d]/10 text-[#40d99d] font-medium">{tag}</span>
+                                {lead.etiquetas?.slice(0, 1).map(tag => (
+                                  <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-full bg-brand-teal/10 text-brand-teal font-semibold">{tag}</span>
                                 ))}
                                 {!lead.etiquetas?.length && (
-                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-[#e5e5e5] text-[#6b7280]">Sin Etiqueta</span>
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-container text-on-surface/40">Sin etiqueta</span>
                                 )}
                               </div>
                               <div className="flex items-center gap-1">
-                                <button className="w-6 h-6 rounded-lg bg-[#40d99d]/10 text-[#40d99d] flex items-center justify-center hover:bg-[#40d99d]/20 transition-colors">
+                                <button className="w-6 h-6 rounded-lg bg-brand-teal/10 text-brand-teal flex items-center justify-center hover:bg-brand-teal/20 transition-colors">
                                   <MessageSquare className="w-3 h-3" />
                                 </button>
-                                <button className="w-6 h-6 rounded-lg bg-[#f0f0f0] text-[#6b7280] flex items-center justify-center hover:bg-[#e5e5e5] transition-colors">
+                                <button className="w-6 h-6 rounded-lg bg-surface-container text-on-surface/50 flex items-center justify-center hover:bg-surface-container-high transition-colors">
                                   <Phone className="w-3 h-3" />
                                 </button>
                               </div>
                             </div>
+
                             {lead.agente && (
-                              <p className="text-[10px] text-[#6b7280] mt-2 truncate">Asignado: {lead.agente.nombre}</p>
+                              <p className="text-[10px] text-on-surface/40 mt-2 truncate">Asignado: {lead.agente.nombre}</p>
                             )}
                             {lead.numero_citas > 0 && (
-                              <p className="text-[10px] text-[#6b7280]">Citas: {lead.numero_citas}{lead.proxima_cita ? ` · ${new Date(lead.proxima_cita).toLocaleDateString('es-CO', {weekday:'short',day:'numeric',month:'numeric'})}` : ''}</p>
+                              <p className="text-[10px] text-on-surface/40">
+                                Citas: {lead.numero_citas}{lead.proxima_cita ? ` · ${new Date(lead.proxima_cita).toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'numeric' })}` : ''}
+                              </p>
                             )}
                           </div>
                         )}
@@ -99,7 +117,7 @@ export function KanbanBoard({ etapas, leads, onLeadMove, onNewLead }: KanbanBoar
                     ))}
                     {provided.placeholder}
                     {etapaLeads.length === 0 && (
-                      <div className="py-6 text-center text-xs text-[#6b7280]">Sin leads</div>
+                      <div className="py-8 text-center text-xs text-on-surface/30">Sin leads</div>
                     )}
                   </div>
                 )}
@@ -108,9 +126,9 @@ export function KanbanBoard({ etapas, leads, onLeadMove, onNewLead }: KanbanBoar
           )
         })}
 
-        {/* Add column placeholder */}
+        {/* Add column */}
         <div className="flex-shrink-0 w-72">
-          <div className="h-12 border-2 border-dashed border-[#e5e5e5] rounded-xl flex items-center justify-center text-xs text-[#6b7280] hover:border-[#40d99d] hover:text-[#40d99d] transition-all cursor-pointer">
+          <div className="h-12 rounded-xl flex items-center justify-center text-xs text-on-surface/30 bg-surface-container hover:bg-surface-container-high hover:text-brand-teal transition-all cursor-pointer">
             <Plus className="w-4 h-4 mr-1" />Nueva etapa
           </div>
         </div>

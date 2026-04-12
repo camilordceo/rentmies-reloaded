@@ -54,24 +54,24 @@ export function InfoEmpresaTab({ empresa }: InfoEmpresaTabProps) {
   return (
     <div className="max-w-xl space-y-4">
       {fields.map((f) => (
-        <div key={f.key}>
-          <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">{f.label}</label>
+        <div key={f.key} className="space-y-1.5">
+          <label className="text-xs font-medium text-on-surface/50">{f.label}</label>
           <input
             type={f.type}
             value={form[f.key]}
             onChange={(e) => setForm((p) => ({ ...p, [f.key]: e.target.value }))}
             placeholder={f.placeholder}
-            className="w-full h-10 px-3 border border-[#e5e5e5] rounded-lg text-sm text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#40d99d] focus:border-transparent"
+            className="w-full h-10 px-3 bg-surface-container rounded-lg text-sm text-on-surface placeholder:text-on-surface/35 outline-none focus:ring-2 focus:ring-brand-teal/30 transition-all"
           />
         </div>
       ))}
       <button
         onClick={handleSave}
         disabled={saving}
-        className="flex items-center gap-2 px-4 py-2 bg-[#40d99d] text-white text-sm font-medium rounded-lg hover:bg-[#40d99d]/90 disabled:opacity-50 transition-all"
+        className="flex items-center gap-2 px-4 py-2 bg-authority-green text-white text-sm font-semibold rounded-lg hover:bg-authority-green/90 disabled:opacity-50 transition-all"
       >
-        <Save className="w-4 h-4" />
-        {saving ? 'Guardando...' : saved ? '¡Guardado!' : 'Guardar Cambios'}
+        <Save className="w-3.5 h-3.5" />
+        {saving ? 'Guardando...' : saved ? 'Guardado' : 'Guardar Cambios'}
       </button>
     </div>
   )

@@ -7,14 +7,14 @@ interface AgentStatusBadgeProps {
 export function AgentStatusBadge({ activo }: AgentStatusBadgeProps) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
         activo
-          ? 'bg-[#40d99d]/10 text-[#40d99d]'
-          : 'bg-[#f0f0f0] text-[#6b7280]'
+          ? 'bg-brand-teal/10 text-brand-teal'
+          : 'bg-surface-container text-on-surface/50'
       }`}
     >
       <span
-        className={`w-1.5 h-1.5 rounded-full ${activo ? 'bg-[#40d99d]' : 'bg-[#6b7280]'}`}
+        className={`w-1.5 h-1.5 rounded-full ${activo ? 'bg-brand-teal' : 'bg-on-surface/30'}`}
       />
       {activo ? 'Activo' : 'Inactivo'}
     </span>

@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { LogOut, ChevronDown } from 'lucide-react'
+import { LogOut, Search, Mic, Bell, ChevronDown } from 'lucide-react'
 import { useState } from 'react'
 import type { Profile } from '@/lib/types'
 
@@ -28,42 +28,66 @@ export function Topbar({ profile }: TopbarProps) {
   const displayName = profile?.nombre ?? profile?.email ?? 'Usuario'
 
   return (
-    <header className="h-16 bg-white border-b border-[#e5e5e5] flex items-center justify-end px-4 lg:px-6 flex-shrink-0">
-      <div className="relative">
-        <button
-          onClick={() => setOpen(!open)}
-          className="flex items-center gap-2.5 hover:bg-[#f8f8f8] rounded-lg px-3 py-2 transition-colors"
-        >
-          <div className="w-8 h-8 bg-[#40d99d]/15 rounded-full flex items-center justify-center">
-            <span className="text-xs font-medium text-[#40d99d]">{initials}</span>
-          </div>
-          <span className="text-sm text-[#1a1a1a] hidden sm:block max-w-[120px] truncate">
-            {displayName}
-          </span>
-          <ChevronDown className="w-3.5 h-3.5 text-[#6b7280]" />
+    <header className="h-14 bg-surface/80 backdrop-blur-xl flex items-center justify-between px-4 lg:px-6 flex-shrink-0 sticky top-0 z-30">
+      {/* Search bar */}
+      <div className="flex items-center gap-2 bg-surface-container rounded-full px-4 py-2 w-64 lg:w-80">
+        <Search className="w-3.5 h-3.5 text-on-surface/40 flex-shrink-0" />
+        <input
+          type="text"
+          placeholder="Buscar leads, propiedades..."
+          className="flex-1 bg-transparent text-sm text-on-surface placeholder:text-on-surface/35 outline-none min-w-0"
+        />
+        <Mic className="w-3.5 h-3.5 text-on-surface/30 flex-shrink-0 hover:text-brand-teal cursor-pointer transition-colors" />
+      </div>
+
+      {/* Right side */}
+      <div className="flex items-center gap-2">
+        {/* Notifications */}
+        <button className="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface/40 hover:bg-surface-container hover:text-on-surface transition-all relative">
+          <Bell className="w-4 h-4" />
+          <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-brand-teal" />
         </button>
 
-        {open && (
-          <>
-            <div
-              className="fixed inset-0 z-10"
-              onClick={() => setOpen(false)}
-            />
-            <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-[#e5e5e5] rounded-lg shadow-md z-20 py-1">
-              <div className="px-3 py-2 border-b border-[#e5e5e5]">
-                <p className="text-xs font-medium text-[#1a1a1a] truncate">{displayName}</p>
-                <p className="text-[11px] text-[#6b7280] truncate">{profile?.email}</p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#6b7280] hover:text-[#1a1a1a] hover:bg-[#f8f8f8] transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                Cerrar sesión
-              </button>
+        {/* Inquire CTA */}
+        <button className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-authority-green text-white text-xs font-semibold hover:bg-authority-green/90 transition-colors">
+          Inquire
+          <span className="text-white/60">▶</span>
+        </button>
+
+        {/* Avatar dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setOpen(!open)}
+            className="flex items-center gap-2 hover:bg-surface-container rounded-lg px-2.5 py-1.5 transition-colors"
+          >
+            <div className="w-7 h-7 bg-brand-teal/15 rounded-full flex items-center justify-center">
+              <span className="text-[11px] font-semibold text-brand-teal">{initials}</span>
             </div>
-          </>
-        )}
+            <span className="text-sm text-on-surface hidden sm:block max-w-[100px] truncate">
+              {displayName}
+            </span>
+            <ChevronDown className="w-3 h-3 text-on-surface/30" />
+          </button>
+
+          {open && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+              <div className="absolute right-0 top-full mt-1.5 w-48 bg-surface-container-lowest rounded-xl shadow-editorial z-20 py-1.5 overflow-hidden">
+                <div className="px-3 py-2 mb-1">
+                  <p className="text-xs font-semibold text-on-surface truncate">{displayName}</p>
+                  <p className="text-[11px] text-on-surface/50 truncate">{profile?.email}</p>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-on-surface/60 hover:text-on-surface hover:bg-surface-container transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Cerrar sesión
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </header>
   )

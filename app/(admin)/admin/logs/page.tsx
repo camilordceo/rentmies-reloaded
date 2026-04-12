@@ -13,10 +13,11 @@ export default async function LogsPage() {
     .limit(200)
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-xl font-medium text-[#1a1a1a]">Logs del sistema</h1>
-        <p className="text-sm text-[#6b7280] mt-0.5">Monitoreo de actividad y errores</p>
+    <div className="max-w-6xl mx-auto space-y-6">
+      <div>
+        <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-authority-green mb-1">MONITOREO</p>
+        <h1 className="text-3xl font-bold tracking-tight text-on-surface">Logs del Sistema</h1>
+        <p className="text-on-surface/50 text-sm mt-1">Actividad y errores en tiempo real</p>
       </div>
       <LogsTable initialLogs={logs ?? []} />
     </div>

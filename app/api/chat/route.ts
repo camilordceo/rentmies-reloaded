@@ -4,6 +4,16 @@ import { processMessage } from '@/lib/agent/orchestrator'
 
 export const maxDuration = 30
 
+// Extract a sentence from the AI reply that mentions the property identifier
+function extractInsight(text: string, identifier: string): string | undefined {
+  if (!identifier) return undefined
+  const sentences = text.split(/(?<=[.!?])\s+/)
+  const match = sentences.find((s) =>
+    s.toLowerCase().includes(identifier.toLowerCase())
+  )
+  return match?.trim() ?? undefined
+}
+
 export async function POST(req: NextRequest) {
   const { empresa_id, message, session_id, previous_response_id } = await req.json()
   if (!message) return NextResponse.json({ error: 'message requerido' }, { status: 400 })
@@ -118,5 +128,19 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ text: result.text, properties: result.properties, response_id: result.responseId, conversation_id: conversacion?.id })
+  // Enrich properties with match_score and agent_insight
+  const enrichedProperties = result.properties.map((p: any, idx: number) => ({
+    ...p,
+    // Rank-based score: first result = 1.0, each subsequent -0.07 (min 0.4)
+    match_score: Math.max(0.4, 1.0 - idx * 0.07),
+    // Pull first sentence of the AI reply that mentions this property as insight
+    agent_insight: extractInsight(result.text, p.codigo ?? p.ubicacion ?? ''),
+  }))
+
+  return NextResponse.json({
+    text: result.text,
+    properties: enrichedProperties,
+    response_id: result.responseId,
+    conversation_id: conversacion?.id,
+  })
 }

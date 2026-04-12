@@ -36,46 +36,72 @@ export function AgentesTab({ agentes: initial, empresaId }: { agentes: Agente[];
   return (
     <div className="max-w-2xl space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-[#6b7280]">{agentes.length} agente{agentes.length !== 1 ? 's' : ''}</p>
-        <button onClick={() => setAdding(true)} className="flex items-center gap-2 px-3 py-2 bg-[#40d99d] text-white text-sm font-medium rounded-lg hover:bg-[#40d99d]/90 transition-all">
-          <Plus className="w-4 h-4" /> Agregar Agente
+        <p className="text-xs text-on-surface/50">{agentes.length} agente{agentes.length !== 1 ? 's' : ''} registrados</p>
+        <button
+          onClick={() => setAdding(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-authority-green text-white text-sm font-semibold rounded-lg hover:bg-authority-green/90 transition-all"
+        >
+          <Plus className="w-3.5 h-3.5" /> Agregar Agente
         </button>
       </div>
 
       {adding && (
-        <div className="bg-[#f8f8f8] border border-[#e5e5e5] rounded-xl p-4 space-y-3">
-          {[['nombre','Nombre completo'],['email','Email'],['telefono','Teléfono']].map(([k,p]) => (
-            <input key={k} placeholder={p} value={(form as Record<string,string>)[k]} onChange={e => setForm(f => ({...f,[k]:e.target.value}))}
-              className="w-full h-9 px-3 border border-[#e5e5e5] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#40d99d]" />
+        <div className="bg-surface-container rounded-xl p-5 space-y-3">
+          {[['nombre', 'Nombre completo'], ['email', 'Email'], ['telefono', 'Teléfono']].map(([k, p]) => (
+            <input
+              key={k}
+              placeholder={p}
+              value={(form as Record<string, string>)[k]}
+              onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))}
+              className="w-full h-10 px-3 bg-surface-container-lowest rounded-lg text-sm text-on-surface placeholder:text-on-surface/35 outline-none focus:ring-2 focus:ring-brand-teal/30 transition-all"
+            />
           ))}
-          <div className="flex gap-2">
-            <button onClick={handleAdd} disabled={saving} className="px-4 py-2 bg-[#40d99d] text-white text-sm rounded-lg disabled:opacity-50">{saving ? 'Guardando...' : 'Guardar'}</button>
-            <button onClick={() => setAdding(false)} className="px-4 py-2 text-sm text-[#6b7280] hover:text-[#1a1a1a]">Cancelar</button>
+          <div className="flex gap-2 pt-1">
+            <button
+              onClick={handleAdd}
+              disabled={saving}
+              className="px-4 py-2 bg-authority-green text-white text-sm font-semibold rounded-lg disabled:opacity-50 transition-all"
+            >
+              {saving ? 'Guardando...' : 'Guardar'}
+            </button>
+            <button
+              onClick={() => setAdding(false)}
+              className="px-4 py-2 text-sm text-on-surface/50 hover:text-on-surface transition-colors"
+            >
+              Cancelar
+            </button>
           </div>
         </div>
       )}
 
       <div className="space-y-2">
         {agentes.map(a => (
-          <div key={a.id} className="flex items-center gap-3 bg-white border border-[#e5e5e5] rounded-xl p-4">
-            <div className="w-9 h-9 bg-[#40d99d]/10 rounded-full flex items-center justify-center flex-shrink-0">
-              <UserCheck className="w-4 h-4 text-[#40d99d]" />
+          <div key={a.id} className="flex items-center gap-3 bg-surface-container-lowest rounded-xl p-4 shadow-editorial">
+            <div className="w-9 h-9 bg-brand-teal/10 rounded-full flex items-center justify-center flex-shrink-0">
+              <UserCheck className="w-4 h-4 text-brand-teal" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-[#1a1a1a]">{a.nombre}</p>
-              <p className="text-xs text-[#6b7280]">{a.email || a.telefono || 'Sin contacto'}</p>
+              <p className="text-sm font-semibold text-on-surface">{a.nombre}</p>
+              <p className="text-xs text-on-surface/50">{a.email || a.telefono || 'Sin contacto'}</p>
             </div>
-            <button onClick={() => toggleActivo(a.id, a.activo)}
-              className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${a.activo ? 'bg-[#40d99d]/10 text-[#40d99d]' : 'bg-[#f0f0f0] text-[#6b7280]'}`}>
+            <button
+              onClick={() => toggleActivo(a.id, a.activo)}
+              className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${a.activo ? 'bg-brand-teal/10 text-brand-teal' : 'bg-surface-container text-on-surface/50'}`}
+            >
               {a.activo ? 'Activo' : 'Inactivo'}
             </button>
-            <button onClick={() => handleDelete(a.id)} className="text-[#6b7280] hover:text-red-500 transition-colors">
+            <button
+              onClick={() => handleDelete(a.id)}
+              className="text-on-surface/30 hover:text-red-500 transition-colors"
+            >
               <Trash2 className="w-4 h-4" />
             </button>
           </div>
         ))}
         {agentes.length === 0 && !adding && (
-          <p className="text-sm text-[#6b7280] text-center py-8">No hay agentes. Agrega el primero.</p>
+          <div className="py-12 text-center">
+            <p className="text-sm text-on-surface/40">No hay agentes. Agrega el primero.</p>
+          </div>
         )}
       </div>
     </div>

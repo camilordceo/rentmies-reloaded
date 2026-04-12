@@ -31,26 +31,27 @@ export function WaConversationsClient({ conversations, agents }: WaConversations
   const selectedConv = conversations.find((c) => c.id === selectedId) || null
 
   return (
-    <div className="flex h-[calc(100vh-theme(spacing.28))] -m-4 lg:-m-6 rounded-xl overflow-hidden border border-[#e5e5e5]">
+    <div className="flex h-[calc(100vh-theme(spacing.28))] -m-4 lg:-m-6 rounded-xl overflow-hidden bg-surface-container-lowest shadow-editorial">
       {/* Left panel */}
-      <div className="w-80 flex-shrink-0 flex flex-col bg-white border-r border-[#e5e5e5]">
+      <div className="w-80 flex-shrink-0 flex flex-col bg-surface-container">
         {/* Header */}
-        <div className="p-4 border-b border-[#e5e5e5]">
-          <h1 className="text-base font-medium text-[#1a1a1a] mb-3">Conversaciones WhatsApp</h1>
+        <div className="p-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-brand-teal mb-1">WhatsApp</p>
+          <h1 className="text-sm font-semibold text-on-surface mb-3">Conversaciones</h1>
           <div className="relative mb-2">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#6b7280]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface/40" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por nombre o teléfono..."
-              className="w-full h-8 pl-8 pr-3 border border-[#e5e5e5] rounded-lg text-xs text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#40d99d]"
+              className="w-full h-8 pl-8 pr-3 bg-surface-container-lowest rounded-lg text-xs text-on-surface placeholder:text-on-surface/35 outline-none focus:ring-2 focus:ring-brand-teal/30 transition-all"
             />
           </div>
           <select
             value={filterAgent}
             onChange={(e) => setFilterAgent(e.target.value)}
-            className="w-full h-8 px-2 border border-[#e5e5e5] rounded-lg text-xs text-[#1a1a1a] bg-white focus:outline-none focus:ring-2 focus:ring-[#40d99d]"
+            className="w-full h-8 px-2 bg-surface-container-lowest rounded-lg text-xs text-on-surface outline-none focus:ring-2 focus:ring-brand-teal/30 transition-all"
           >
             <option value="">Todos los agentes</option>
             {agents.map((a) => (
@@ -72,16 +73,16 @@ export function WaConversationsClient({ conversations, agents }: WaConversations
       </div>
 
       {/* Right panel */}
-      <div className="flex-1 flex flex-col bg-[#f8f8f8]">
+      <div className="flex-1 flex flex-col bg-surface">
         {selectedConv ? (
           <ChatViewWA conversation={selectedConv} />
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-            <div className="w-14 h-14 bg-[#f0f0f0] rounded-2xl flex items-center justify-center mb-3">
-              <MessageSquare className="w-7 h-7 text-[#6b7280]" />
+            <div className="w-14 h-14 bg-surface-container rounded-2xl flex items-center justify-center mb-3">
+              <MessageSquare className="w-7 h-7 text-on-surface/30" />
             </div>
-            <p className="text-sm font-medium text-[#1a1a1a] mb-1">Selecciona una conversación</p>
-            <p className="text-xs text-[#6b7280]">Elige una conversación de la lista para ver el chat</p>
+            <p className="text-sm font-semibold text-on-surface mb-1">Selecciona una conversación</p>
+            <p className="text-xs text-on-surface/40">Elige una conversación de la lista para ver el chat</p>
           </div>
         )}
       </div>

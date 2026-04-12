@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { toast } from 'sonner'
-import { Plus, Bot, Mic, MessageSquare, Trash2, ChevronDown, ChevronUp, ToggleLeft, ToggleRight, Upload, Loader2, CheckCircle2 } from 'lucide-react'
+import { Plus, Bot, Mic, MessageSquare, Facebook, Trash2, ChevronDown, ChevronUp, ToggleLeft, ToggleRight, Upload, Loader2, CheckCircle2 } from 'lucide-react'
 import type { AgenteIA } from '@/lib/types/database'
 
 interface AgentesIAClientProps {
@@ -10,8 +10,8 @@ interface AgentesIAClientProps {
   empresaId: string
 }
 
-const CANAL_LABELS = { whatsapp: 'WhatsApp IA', voz: 'Voz IA', web_chat: 'Web Chat IA' }
-const CANAL_ICONS = { whatsapp: MessageSquare, voz: Mic, web_chat: Bot }
+const CANAL_LABELS = { whatsapp: 'WhatsApp IA', voz: 'Voz IA', web_chat: 'Web Chat IA', facebook_messenger: 'Facebook Messenger' }
+const CANAL_ICONS = { whatsapp: MessageSquare, voz: Mic, web_chat: Bot, facebook_messenger: Facebook }
 
 function AgenteCard({ agente, onUpdate, onDelete }: { agente: AgenteIA; onUpdate: (a: AgenteIA) => void; onDelete: (id: string) => void }) {
   const [expanded, setExpanded] = useState(false)

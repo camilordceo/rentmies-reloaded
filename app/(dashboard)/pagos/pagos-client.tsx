@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Check, Zap, Crown, Building2, CreditCard, Clock, CheckCircle2, XCircle } from 'lucide-react'
+import { Check, Zap, Crown, Building2, CreditCard, Clock, CheckCircle2, XCircle, Sparkles } from 'lucide-react'
 import { PLANES } from '@/lib/constants'
 import type { Suscripcion, Pago } from '@/lib/types/database'
 
@@ -41,39 +41,43 @@ export function PagosClient({ suscripcion, pagos, empresaId }: PagosClientProps)
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-medium text-[#1a1a1a]">Pagos & Suscripción</h1>
+      {/* Eyebrow + title */}
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-authority-green mb-1">FACTURACIÓN</p>
+          <h1 className="text-3xl font-bold tracking-tight text-on-surface">Pagos & Suscripción</h1>
+        </div>
         {isActive && (
-          <span className="flex items-center gap-1.5 text-sm text-[#40d99d] bg-[#40d99d]/10 px-3 py-1.5 rounded-full font-medium">
+          <span className="flex items-center gap-1.5 text-sm text-brand-teal bg-brand-teal/10 px-3 py-1.5 rounded-full font-semibold">
             <CheckCircle2 className="w-4 h-4" />Plan activo
           </span>
         )}
       </div>
 
-      {/* Current subscription banner */}
+      {/* Current subscription */}
       {suscripcion && (
-        <div className="bg-white border border-[#e5e5e5] rounded-xl p-5 shadow-sm flex items-center justify-between">
+        <div className="bg-authority-green text-white rounded-xl p-6 flex items-center justify-between">
           <div>
-            <p className="text-xs text-[#6b7280] mb-0.5">Plan actual</p>
-            <p className="text-lg font-medium text-[#1a1a1a] capitalize">{suscripcion.plan}</p>
-            <p className="text-xs text-[#6b7280] mt-1">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-1">PLAN ACTUAL</p>
+            <p className="text-xl font-bold capitalize">{suscripcion.plan}</p>
+            <p className="text-sm text-white/60 mt-1">
               {suscripcion.fecha_fin
                 ? `Vence: ${new Date(suscripcion.fecha_fin).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })}`
                 : 'Sin fecha de vencimiento'}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-2xl font-medium text-[#1a1a1a]">
+            <p className="text-4xl font-bold">
               ${(PLANES[currentPlan as keyof typeof PLANES]?.precio || 0).toLocaleString('es-CO')}
             </p>
-            <p className="text-xs text-[#6b7280]">COP / mes</p>
+            <p className="text-sm text-white/50 mt-0.5">COP / mes</p>
           </div>
         </div>
       )}
 
       {/* Plan cards */}
       <div>
-        <h2 className="text-sm font-medium text-[#6b7280] mb-4 uppercase tracking-wide">Planes disponibles</h2>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface/40 mb-4">PLANES DISPONIBLES</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {PLAN_ORDER.map(planKey => {
             const plan = PLANES[planKey]
@@ -82,32 +86,35 @@ export function PagosClient({ suscripcion, pagos, empresaId }: PagosClientProps)
             const isPro = planKey === 'pro'
 
             return (
-              <div key={planKey} className={`relative bg-white border rounded-2xl p-5 shadow-sm transition-all ${isCurrent ? 'border-[#40d99d] ring-1 ring-[#40d99d]' : isPro ? 'border-[#40d99d]/30' : 'border-[#e5e5e5]'}`}>
+              <div
+                key={planKey}
+                className={`relative bg-surface-container-lowest rounded-2xl p-5 transition-all ${isCurrent ? 'shadow-glow-subtle ring-2 ring-brand-teal' : isPro ? 'shadow-editorial ring-1 ring-brand-teal/20' : 'shadow-editorial'}`}
+              >
                 {isPro && !isCurrent && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#40d99d] text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-teal text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide">
                     Recomendado
                   </div>
                 )}
                 {isCurrent && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#1a1a1a] text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-authority-green text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide">
                     Plan actual
                   </div>
                 )}
 
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${isPro ? 'bg-[#40d99d] text-white' : 'bg-[#f0f0f0] text-[#6b7280]'}`}>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${isPro ? 'bg-brand-teal text-white' : 'bg-surface-container text-on-surface/50'}`}>
                   <Icon className="w-5 h-5" />
                 </div>
 
-                <h3 className="text-lg font-medium text-[#1a1a1a]">{plan.nombre}</h3>
+                <h3 className="text-base font-bold text-on-surface">{plan.nombre}</h3>
                 <div className="flex items-baseline gap-1 mt-1 mb-4">
-                  <span className="text-2xl font-semibold text-[#1a1a1a]">${plan.precio.toLocaleString('es-CO')}</span>
-                  <span className="text-xs text-[#6b7280]">COP/mes</span>
+                  <span className="text-2xl font-bold text-authority-green">${plan.precio.toLocaleString('es-CO')}</span>
+                  <span className="text-xs text-on-surface/40">COP/mes</span>
                 </div>
 
                 <ul className="space-y-2 mb-5">
                   {plan.features.map(f => (
-                    <li key={f} className="flex items-start gap-2 text-xs text-[#6b7280]">
-                      <Check className="w-3.5 h-3.5 text-[#40d99d] flex-shrink-0 mt-0.5" />
+                    <li key={f} className="flex items-start gap-2 text-xs text-on-surface/60">
+                      <Check className="w-3.5 h-3.5 text-brand-teal flex-shrink-0 mt-0.5" />
                       {f}
                     </li>
                   ))}
@@ -116,13 +123,13 @@ export function PagosClient({ suscripcion, pagos, empresaId }: PagosClientProps)
                 <button
                   onClick={() => handleSubscribe(planKey)}
                   disabled={isCurrent || (paying && selectedPlan === planKey)}
-                  className={`w-full py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-50 ${
                     isCurrent
-                      ? 'bg-[#f0f0f0] text-[#6b7280] cursor-default'
+                      ? 'bg-surface-container text-on-surface/40 cursor-default'
                       : isPro
-                      ? 'bg-[#40d99d] text-white hover:bg-[#40d99d]/90'
-                      : 'bg-[#1a1a1a] text-white hover:bg-[#1a1a1a]/90'
-                  } disabled:opacity-50`}
+                      ? 'bg-authority-green text-white hover:bg-authority-green/90'
+                      : 'bg-on-surface text-white hover:bg-on-surface/90'
+                  }`}
                 >
                   {isCurrent ? 'Plan actual' : paying && selectedPlan === planKey ? 'Redirigiendo...' : 'Suscribirse'}
                 </button>
@@ -134,53 +141,67 @@ export function PagosClient({ suscripcion, pagos, empresaId }: PagosClientProps)
 
       {/* Billing history */}
       <div>
-        <h2 className="text-sm font-medium text-[#6b7280] mb-4 uppercase tracking-wide">Historial de pagos</h2>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface/40 mb-4">HISTORIAL DE PAGOS</p>
         {pagos.length === 0 ? (
-          <div className="bg-white border border-[#e5e5e5] rounded-xl p-8 text-center">
-            <CreditCard className="w-8 h-8 text-[#e5e5e5] mx-auto mb-2" />
-            <p className="text-sm text-[#6b7280]">Sin pagos registrados</p>
+          <div className="bg-surface-container-lowest rounded-xl p-10 text-center shadow-editorial">
+            <div className="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center mx-auto mb-3">
+              <CreditCard className="w-5 h-5 text-on-surface/30" />
+            </div>
+            <p className="text-sm text-on-surface/50">Sin pagos registrados</p>
           </div>
         ) : (
-          <div className="bg-white border border-[#e5e5e5] rounded-xl overflow-hidden shadow-sm">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#e5e5e5] bg-[#f8f8f8]">
-                  <th className="text-left px-4 py-3 text-xs font-medium text-[#6b7280]">Fecha</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-[#6b7280]">Plan</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-[#6b7280]">Referencia</th>
-                  <th className="text-right px-4 py-3 text-xs font-medium text-[#6b7280]">Monto</th>
-                  <th className="text-center px-4 py-3 text-xs font-medium text-[#6b7280]">Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pagos.map(pago => (
-                  <tr key={pago.id} className="border-b border-[#f0f0f0] last:border-0 hover:bg-[#f8f8f8] transition-colors">
-                    <td className="px-4 py-3 text-[#6b7280]">
-                      {new Date(pago.created_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </td>
-                    <td className="px-4 py-3 font-medium text-[#1a1a1a] capitalize">{(pago.metadata as any)?.plan || '—'}</td>
-                    <td className="px-4 py-3 text-[#6b7280] font-mono text-xs">{pago.wompi_reference || '—'}</td>
-                    <td className="px-4 py-3 text-right font-medium text-[#1a1a1a]">
-                      ${(pago.monto / 100).toLocaleString('es-CO')}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${
-                        pago.estado === 'aprobado' ? 'bg-[#40d99d]/10 text-[#40d99d]' :
-                        pago.estado === 'pendiente' ? 'bg-amber-50 text-amber-600' :
-                        'bg-red-50 text-red-600'
-                      }`}>
-                        {pago.estado === 'aprobado' ? <CheckCircle2 className="w-3 h-3" /> :
-                         pago.estado === 'pendiente' ? <Clock className="w-3 h-3" /> :
-                         <XCircle className="w-3 h-3" />}
-                        {pago.estado}
-                      </span>
-                    </td>
+          <div className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-editorial">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-surface-container">
+                    {['Fecha', 'Plan', 'Referencia', 'Monto', 'Estado'].map(h => (
+                      <th key={h} className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-on-surface/40 last:text-center">{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {pagos.map((pago, i) => (
+                    <tr key={pago.id} className={`hover:bg-surface-container-low transition-colors ${i > 0 ? 'border-t border-outline-variant/10' : ''}`}>
+                      <td className="px-4 py-3 text-xs text-on-surface/50">
+                        {new Date(pago.created_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-on-surface capitalize">{(pago.metadata as any)?.plan || '—'}</td>
+                      <td className="px-4 py-3 text-on-surface/50 font-mono text-xs">{pago.wompi_reference || '—'}</td>
+                      <td className="px-4 py-3 font-bold text-authority-green">
+                        ${(pago.monto / 100).toLocaleString('es-CO')}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-semibold ${
+                          pago.estado === 'aprobado' ? 'bg-brand-teal/10 text-brand-teal' :
+                          pago.estado === 'pendiente' ? 'bg-amber-50 text-amber-600' :
+                          'bg-red-50 text-red-600'
+                        }`}>
+                          {pago.estado === 'aprobado' ? <CheckCircle2 className="w-3 h-3" /> :
+                           pago.estado === 'pendiente' ? <Clock className="w-3 h-3" /> :
+                           <XCircle className="w-3 h-3" />}
+                          {pago.estado}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
+      </div>
+
+      {/* EMA tip */}
+      <div className="bg-surface-container-low rounded-xl p-5">
+        <div className="flex items-center gap-2 mb-1.5">
+          <Sparkles className="w-3.5 h-3.5 text-brand-teal" />
+          <span className="text-[10px] font-bold uppercase tracking-widest text-brand-teal">PERSPECTIVA DE EMA</span>
+        </div>
+        <p className="text-xs text-on-surface/60 italic leading-relaxed">
+          El plan Pro tiene el mejor ROI para agencias de 3-15 agentes. EMA gestiona en promedio
+          340 conversaciones mensuales por cuenta Pro.
+        </p>
       </div>
     </div>
   )

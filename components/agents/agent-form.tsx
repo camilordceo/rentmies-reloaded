@@ -105,10 +105,13 @@ export function AgentForm({ agent, empresas, mode }: AgentFormProps) {
     }
   }
 
+  const inputClass = 'w-full h-10 px-3 bg-surface-container rounded-lg text-sm text-on-surface placeholder:text-on-surface/35 outline-none focus:ring-2 focus:ring-brand-teal/30 transition-all'
+  const labelClass = 'text-xs font-medium text-on-surface/50 block mb-1.5'
+
   return (
     <div className="space-y-6">
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+        <div className="flex items-center gap-2 p-3 bg-red-50 rounded-xl text-sm text-red-700">
           <X className="w-4 h-4 flex-shrink-0" />
           {error}
         </div>
@@ -117,39 +120,37 @@ export function AgentForm({ agent, empresas, mode }: AgentFormProps) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Empresa */}
         <div>
-          <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Empresa</label>
+          <label className={labelClass}>Empresa</label>
           <select
             value={form.empresa_id}
             onChange={(e) => handleEmpresaChange(e.target.value)}
-            className="w-full h-10 px-3 border border-[#e5e5e5] rounded-lg text-sm text-[#1a1a1a] bg-white focus:outline-none focus:ring-2 focus:ring-[#40d99d] focus:border-transparent"
+            className={inputClass}
           >
             <option value="">Seleccionar empresa...</option>
             {empresas.map((emp) => (
-              <option key={emp.id} value={emp.id}>
-                {emp.nombre}
-              </option>
+              <option key={emp.id} value={emp.id}>{emp.nombre}</option>
             ))}
           </select>
         </div>
 
         {/* Nombre agente */}
         <div>
-          <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Nombre del agente AI</label>
+          <label className={labelClass}>Nombre del agente AI</label>
           <input
             type="text"
             value={form.nombre}
             onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
             placeholder="ej: Isabella"
-            className="w-full h-10 px-3 border border-[#e5e5e5] rounded-lg text-sm text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#40d99d] focus:border-transparent"
+            className={inputClass}
           />
         </div>
 
         {/* Assistant ID */}
         <div>
-          <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5 flex items-center gap-1.5">
+          <label className={labelClass + ' flex items-center gap-1.5'}>
             Assistant ID
             <span title="ID del asistente en Rentmies Responses API (ej: asst_TXTkbu...)">
-              <Info className="w-3.5 h-3.5 text-[#6b7280]" />
+              <Info className="w-3.5 h-3.5 text-on-surface/30" />
             </span>
           </label>
           <input
@@ -157,16 +158,16 @@ export function AgentForm({ agent, empresas, mode }: AgentFormProps) {
             value={form.assistant_id}
             onChange={(e) => setForm((f) => ({ ...f, assistant_id: e.target.value }))}
             placeholder="asst_TXTkbuUHbo1xG53AQg2kBeqM"
-            className="w-full h-10 px-3 border border-[#e5e5e5] rounded-lg text-sm font-mono text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#40d99d] focus:border-transparent"
+            className={inputClass + ' font-mono'}
           />
         </div>
 
         {/* Channel UUID */}
         <div>
-          <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5 flex items-center gap-1.5">
+          <label className={labelClass + ' flex items-center gap-1.5'}>
             Channel UUID Callbell
             <span title="UUID del canal de WhatsApp en Callbell">
-              <Info className="w-3.5 h-3.5 text-[#6b7280]" />
+              <Info className="w-3.5 h-3.5 text-on-surface/30" />
             </span>
           </label>
           <input
@@ -174,21 +175,21 @@ export function AgentForm({ agent, empresas, mode }: AgentFormProps) {
             value={form.channel_uuid_callbell}
             onChange={(e) => setForm((f) => ({ ...f, channel_uuid_callbell: e.target.value }))}
             placeholder="27743866072a4dc2a3c7dffff840ba2f"
-            className="w-full h-10 px-3 border border-[#e5e5e5] rounded-lg text-sm font-mono text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#40d99d] focus:border-transparent"
+            className={inputClass + ' font-mono'}
           />
         </div>
 
         {/* Número WhatsApp */}
         <div>
-          <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Número WhatsApp</label>
+          <label className={labelClass}>Número WhatsApp</label>
           <input
             type="text"
             value={form.numero_whatsapp}
             onChange={(e) => setForm((f) => ({ ...f, numero_whatsapp: e.target.value.replace(/[^\d]/g, '') }))}
             placeholder="573001234567 (solo dígitos, sin +)"
-            className="w-full h-10 px-3 border border-[#e5e5e5] rounded-lg text-sm font-mono text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#40d99d] focus:border-transparent"
+            className={inputClass + ' font-mono'}
           />
-          <p className="text-xs text-[#6b7280] mt-1">Formato: código país + número, sin + ni espacios</p>
+          <p className="text-xs text-on-surface/40 mt-1">Formato: código país + número, sin + ni espacios</p>
         </div>
 
         {/* Activo toggle */}
@@ -196,17 +197,11 @@ export function AgentForm({ agent, empresas, mode }: AgentFormProps) {
           <button
             type="button"
             onClick={() => setForm((f) => ({ ...f, activo: !f.activo }))}
-            className={`relative w-10 h-6 rounded-full transition-colors ${
-              form.activo ? 'bg-[#40d99d]' : 'bg-[#e5e5e5]'
-            }`}
+            className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${form.activo ? 'bg-brand-teal' : 'bg-surface-container-highest'}`}
           >
-            <span
-              className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
-                form.activo ? 'translate-x-5' : 'translate-x-1'
-              }`}
-            />
+            <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.activo ? 'translate-x-5' : 'translate-x-1'}`} />
           </button>
-          <label className="text-sm font-medium text-[#1a1a1a]">
+          <label className="text-sm font-semibold text-on-surface">
             {form.activo ? 'Agente activo' : 'Agente inactivo'}
           </label>
         </div>
@@ -214,16 +209,14 @@ export function AgentForm({ agent, empresas, mode }: AgentFormProps) {
 
       {/* JSON config */}
       <div>
-        <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">
-          Configuración <span className="text-[#6b7280] font-normal">(JSON)</span>
+        <label className={labelClass}>
+          Configuración <span className="text-on-surface/30 font-normal">(JSON)</span>
         </label>
         <textarea
           value={form.metadata}
           onChange={(e) => handleJsonChange(e.target.value)}
           rows={4}
-          className={`w-full px-3 py-2 border rounded-lg text-sm font-mono text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#40d99d] focus:border-transparent resize-none ${
-            jsonError ? 'border-red-300' : 'border-[#e5e5e5]'
-          }`}
+          className={`w-full px-3 py-2.5 bg-surface-container rounded-xl text-sm font-mono text-on-surface outline-none resize-none transition-all ${jsonError ? 'ring-2 ring-red-300' : 'focus:ring-2 focus:ring-brand-teal/30'}`}
         />
         {jsonError && <p className="text-xs text-red-600 mt-1">{jsonError}</p>}
       </div>
@@ -234,14 +227,14 @@ export function AgentForm({ agent, empresas, mode }: AgentFormProps) {
           <button
             onClick={handleSave}
             disabled={saving || !!jsonError}
-            className="flex items-center gap-2 px-4 py-2 bg-[#40d99d] text-white text-sm font-medium rounded-lg hover:bg-[#40d99d]/90 disabled:opacity-50 transition-all"
+            className="flex items-center gap-2 px-4 py-2 bg-authority-green text-white text-sm font-semibold rounded-lg hover:bg-authority-green/90 disabled:opacity-50 transition-all"
           >
-            <Save className="w-4 h-4" />
+            <Save className="w-3.5 h-3.5" />
             {saving ? 'Guardando...' : 'Guardar'}
           </button>
           <button
             onClick={() => router.back()}
-            className="px-4 py-2 text-sm text-[#6b7280] hover:text-[#1a1a1a] transition-colors"
+            className="px-4 py-2 text-sm text-on-surface/50 hover:text-on-surface transition-colors"
           >
             Cancelar
           </button>
@@ -251,13 +244,13 @@ export function AgentForm({ agent, empresas, mode }: AgentFormProps) {
           <button
             onClick={handleDelete}
             disabled={deleting}
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
               confirmDelete
                 ? 'bg-red-600 text-white hover:bg-red-700'
-                : 'text-red-600 hover:bg-red-50 border border-red-200'
+                : 'text-red-600 hover:bg-red-50 bg-red-50/50'
             }`}
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-3.5 h-3.5" />
             {deleting ? 'Eliminando...' : confirmDelete ? 'Confirmar eliminación' : 'Eliminar agente'}
           </button>
         )}

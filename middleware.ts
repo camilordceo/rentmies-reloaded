@@ -43,6 +43,22 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Protect mi-cuenta routes (comprador portal)
+  if (pathname.startsWith('/mi-cuenta')) {
+    if (!user) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      return NextResponse.redirect(url)
+    }
+    const { data: profile } = await supabase
+      .from('profiles').select('rol').eq('id', user.id).single()
+    if (profile?.rol !== 'comprador') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
+    }
+  }
+
   // Protect admin routes
   if (pathname.startsWith('/admin')) {
     if (!user) {
@@ -50,14 +66,8 @@ export async function middleware(request: NextRequest) {
       url.pathname = '/login'
       return NextResponse.redirect(url)
     }
-
-    // Check admin role
     const { data: profile } = await supabase
-      .from('profiles')
-      .select('rol')
-      .eq('id', user.id)
-      .single()
-
+      .from('profiles').select('rol').eq('id', user.id).single()
     if (profile?.rol !== 'admin') {
       const url = request.nextUrl.clone()
       url.pathname = '/dashboard'
@@ -65,10 +75,23 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Redirect compradores away from /dashboard → /mi-cuenta
+  if (pathname.startsWith('/dashboard') && user) {
+    const { data: profile } = await supabase
+      .from('profiles').select('rol').eq('id', user.id).single()
+    if (profile?.rol === 'comprador') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/mi-cuenta'
+      return NextResponse.redirect(url)
+    }
+  }
+
   // Redirect authenticated users away from auth pages
   if ((pathname === '/login' || pathname === '/registro') && user) {
+    const { data: profile } = await supabase
+      .from('profiles').select('rol').eq('id', user.id).single()
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
+    url.pathname = profile?.rol === 'comprador' ? '/mi-cuenta' : '/dashboard'
     return NextResponse.redirect(url)
   }
 

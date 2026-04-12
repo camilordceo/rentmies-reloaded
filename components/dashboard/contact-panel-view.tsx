@@ -48,20 +48,20 @@ export function ContactPanelView({
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-surface-container-lowest rounded-xl shadow-editorial overflow-hidden">
       {/* Header */}
-      <div className="p-3 border-b border-[#e5e5e5] flex items-center gap-2 flex-shrink-0">
+      <div className="p-3 flex items-center gap-2 flex-shrink-0">
         <button
-          className="lg:hidden p-1.5 hover:bg-[#f0f0f0] rounded-lg transition-colors"
+          className="lg:hidden p-1.5 hover:bg-surface-container rounded-lg transition-colors"
           onClick={onBack}
         >
-          <ChevronLeft className="w-4 h-4 text-[#6b7280]" />
+          <ChevronLeft className="w-4 h-4 text-on-surface/40" />
         </button>
-        <h3 className="text-sm font-medium text-[#1a1a1a]">Información del contacto</h3>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface/40">Información del contacto</p>
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-1">
+      <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
         {/* Lead info */}
         <Section
           id="lead"
@@ -106,7 +106,7 @@ export function ContactPanelView({
           <select
             value={conv.crm_stage ?? 'lead-nuevo'}
             onChange={(e) => onUpdateCRMStage(conv.id, e.target.value)}
-            className="w-full h-8 px-2.5 text-xs rounded-lg border border-[#e5e5e5] bg-white text-[#1a1a1a] focus:outline-none focus:border-[#40d99d] focus:ring-1 focus:ring-[#40d99d]"
+            className="w-full h-8 px-2.5 text-xs rounded-lg bg-surface-container text-on-surface outline-none focus:ring-2 focus:ring-brand-teal/30 transition-all"
           >
             {CRM_STAGES.map((s) => (
               <option key={s.id} value={s.id}>{s.name}</option>
@@ -124,14 +124,14 @@ export function ContactPanelView({
         >
           {conv.appointment_date ? (
             <div className="space-y-1.5">
-              <div className="flex items-center gap-2 p-2 bg-[#40d99d]/10 rounded-lg">
-                <Calendar className="w-3.5 h-3.5 text-[#40d99d] flex-shrink-0" />
+              <div className="flex items-center gap-2 p-2 bg-brand-teal/10 rounded-lg">
+                <Calendar className="w-3.5 h-3.5 text-brand-teal flex-shrink-0" />
                 <div>
-                  <p className="text-xs font-medium text-[#1a1a1a]">
+                  <p className="text-xs font-semibold text-on-surface">
                     {format(new Date(conv.appointment_date), "d 'de' MMMM, yyyy", { locale: es })}
                   </p>
                   {conv.appointment_time && (
-                    <p className="text-[11px] text-[#6b7280] flex items-center gap-1">
+                    <p className="text-[11px] text-on-surface/40 flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {conv.appointment_time}
                     </p>
@@ -146,7 +146,7 @@ export function ContactPanelView({
               </button>
             </div>
           ) : (
-            <p className="text-xs text-[#6b7280]">Sin cita agendada</p>
+            <p className="text-xs text-on-surface/40">Sin cita agendada</p>
           )}
         </Section>
 
@@ -163,7 +163,7 @@ export function ContactPanelView({
               {conv.consulted_properties.map((code: string) => (
                 <span
                   key={code}
-                  className="text-[11px] px-2 py-0.5 bg-[#f0f0f0] rounded font-mono text-[#1a1a1a]"
+                  className="text-[11px] px-2 py-0.5 bg-surface-container rounded font-mono text-on-surface/70"
                 >
                   {code}
                 </span>
@@ -187,18 +187,18 @@ function Section({
   children: React.ReactNode
 }) {
   return (
-    <div className="border border-[#e5e5e5] rounded-lg overflow-hidden">
+    <div className="bg-surface-container rounded-xl overflow-hidden">
       <button
         onClick={onToggle}
-        className="flex items-center justify-between w-full px-3 py-2.5 hover:bg-[#f8f8f8] transition-colors"
+        className="flex items-center justify-between w-full px-3 py-2.5 hover:bg-surface-container-high transition-colors"
       >
         <div className="flex items-center gap-2">
-          <span className="text-[#6b7280]">{icon}</span>
-          <span className="text-xs font-medium text-[#1a1a1a]">{label}</span>
+          <span className="text-on-surface/40">{icon}</span>
+          <span className="text-xs font-semibold text-on-surface">{label}</span>
         </div>
         {isOpen
-          ? <ChevronDown className="w-3.5 h-3.5 text-[#6b7280]" />
-          : <ChevronRight className="w-3.5 h-3.5 text-[#6b7280]" />}
+          ? <ChevronDown className="w-3.5 h-3.5 text-on-surface/40" />
+          : <ChevronRight className="w-3.5 h-3.5 text-on-surface/40" />}
       </button>
       {isOpen && (
         <div className="px-3 pb-3 pt-1">
@@ -212,10 +212,10 @@ function Section({
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="flex items-start gap-2">
-      <span className="text-[#6b7280] mt-0.5 flex-shrink-0">{icon}</span>
+      <span className="text-on-surface/40 mt-0.5 flex-shrink-0">{icon}</span>
       <div className="min-w-0">
-        <p className="text-[10px] text-[#6b7280] uppercase tracking-wide">{label}</p>
-        <p className="text-xs text-[#1a1a1a] break-words">{value}</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface/40">{label}</p>
+        <p className="text-xs text-on-surface break-words">{value}</p>
       </div>
     </div>
   )
