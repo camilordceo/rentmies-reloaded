@@ -1,53 +1,39 @@
 export const dynamic = 'force-dynamic'
 
 import { notFound } from 'next/navigation'
-import { createClient } from '@supabase/supabase-js'
-import { ArrowLeft, MessageSquare, Calendar } from 'lucide-react'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { ArrowLeft, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 import { AgentForm } from '@/components/agents/agent-form'
 import { AgentStatusBadge } from '@/components/agents/agent-status-badge'
-import { formatDistanceToNow } from 'date-fns'
-import { es } from 'date-fns/locale'
-import type { WhatsappAI, Empresa } from '@/lib/types'
-
-function getDB() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
+import type { AgenteIA, Empresa } from '@/lib/types'
 
 export default async function AgentDetailPage({ params }: { params: { id: string } }) {
-  const supabase = getDB()
+  const db = createAdminClient()
 
   const [agentRes, empresasRes] = await Promise.all([
-    supabase
-      .from('whatsapp_ai')
-      .select('*, empresas(nombre, plan)')
-      .eq('id', params.id)
-      .single(),
-    supabase.from('empresas').select('id, nombre, plan, activo').eq('activo', true).order('nombre'),
+    db.from('agentes_ia').select('*, empresas(nombre, plan)').eq('id', params.id).single(),
+    db.from('empresas').select('id, nombre, plan, activo').eq('activo', true).order('nombre'),
   ])
 
   if (!agentRes.data) notFound()
 
-  const agent = agentRes.data as WhatsappAI
+  const agent = agentRes.data as AgenteIA
   const empresas = (empresasRes.data || []) as Empresa[]
 
-  // Stats
-  const { count: totalConvs } = await supabase
+  const { count: totalConvs } = await db
     .from('conversacion')
     .select('id', { count: 'exact', head: true })
     .eq('whatsapp_ai_id', params.id)
 
-  const { count: activeConvs } = await supabase
+  const { count: activeConvs } = await db
     .from('conversacion')
     .select('id', { count: 'exact', head: true })
     .eq('whatsapp_ai_id', params.id)
     .eq('activa', true)
 
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-  const { count: recentMessages } = await supabase
+  const { count: recentMessages } = await db
     .from('mensaje')
     .select('id', { count: 'exact', head: true })
     .gte('created_at', thirtyDaysAgo)
@@ -61,7 +47,7 @@ export default async function AgentDetailPage({ params }: { params: { id: string
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-medium text-[#1a1a1a]">
-              {agent.nombre_agente || 'Agente sin nombre'}
+              {agent.nombre || 'Agente sin nombre'}
             </h1>
             <AgentStatusBadge activo={agent.activo} />
           </div>

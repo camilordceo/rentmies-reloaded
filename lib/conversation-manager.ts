@@ -16,7 +16,7 @@ import { sendWhatsAppMessage } from './callbell'
 import { processMessage } from './agent/orchestrator'
 import { logger } from './logger'
 import type {
-  WhatsappAI,
+  AgenteIA,
   UserConversacion,
   Conversacion,
   CallbellWebhookPayload,
@@ -30,7 +30,7 @@ const ERROR_REPLY =
 
 // ─── DB helpers ──────────────────────────────────────────────────────────────
 
-async function findWhatsappAI(toNumber: string): Promise<WhatsappAI | null> {
+async function findWhatsappAI(toNumber: string): Promise<AgenteIA | null> {
   const db = createAdminClient()
   const { data } = await db
     .from('agentes_ia')
@@ -170,7 +170,7 @@ export async function processIncomingMessage(
   if (!payload.text) {
     await sendWhatsAppMessage({
       to: fromPhone,
-      channelUuid: (agent as any).channel_uuid_callbell,
+      channelUuid: agent.channel_uuid_callbell ?? '',
       text: NO_TEXT_REPLY,
     })
     return
@@ -198,7 +198,7 @@ export async function processIncomingMessage(
   try {
     const result = await processMessage({
       conversacion,
-      whatsappAI: agent as any,
+      whatsappAI: agent,
       userMessage: combinedText,
     })
     replyText = result.text
@@ -207,14 +207,14 @@ export async function processIncomingMessage(
       empresa_id: agent.empresa_id,
       conversacion_id: conversacion.id,
       context: { error: err instanceof Error ? err.message : String(err) },
-    } as any)
+    })
     replyText = ERROR_REPLY
   }
 
   // 7. Send reply via Callbell
   const callbellResp = await sendWhatsAppMessage({
     to: fromPhone,
-    channelUuid: (agent as any).channel_uuid_callbell,
+    channelUuid: agent.channel_uuid_callbell ?? '',
     text: replyText,
   })
 

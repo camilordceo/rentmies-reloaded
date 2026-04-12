@@ -102,12 +102,8 @@ export function formatCurrency(value: string | number, currency = 'COP'): string
   }).format(num)
 }
 
-export function normalizePhone(phone: string): string {
-  return phone.replace(/[^\d]/g, '')
-}
-
 export function formatPhone(phone: string): string {
-  const digits = normalizePhone(phone)
+  const digits = phone.replace(/[^\d]/g, '')
   if (digits.startsWith('57') && digits.length === 12) {
     return `+57 ${digits.slice(2, 5)} ${digits.slice(5, 8)} ${digits.slice(8)}`
   }

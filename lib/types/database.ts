@@ -1,8 +1,13 @@
 // ============================================================
-// RENTMIES — Database Types (all tables)
+// RENTMIES — Canonical Database Types (single source of truth)
 // ============================================================
 
-export type UserRole = 'admin' | 'empresa' | 'agente' | 'user'
+// ─── Roles ───────────────────────────────────────────────
+// 'admin'        — super admin (Rentmies staff)
+// 'empresa_admin'— company administrator
+// 'agente'       — human sales agent
+// 'comprador'    — buyer/renter registered via portal
+export type UserRole = 'admin' | 'empresa_admin' | 'agente' | 'comprador'
 export type Plan = 'free' | 'starter' | 'pro' | 'enterprise'
 
 // ─── Core ────────────────────────────────────────────────
@@ -25,12 +30,13 @@ export interface Empresa {
   nombre: string
   logo_url: string | null
   plan: Plan
-  activa: boolean
+  activo: boolean
+  ciudad: string | null
   configuracion: Record<string, unknown>
   created_at?: string
 }
 
-// ─── WhatsApp AI (existing) ──────────────────────────────
+// ─── WhatsApp AI (legacy table, kept for FK compat) ──────
 
 export interface WhatsappAI {
   id: string
@@ -44,6 +50,12 @@ export interface WhatsappAI {
   configuracion_extra: Record<string, unknown>
   created_at?: string
 }
+
+export interface WhatsappAIWithEmpresa extends WhatsappAI {
+  empresas: { nombre: string; plan: string } | null
+}
+
+// ─── Conversations ────────────────────────────────────────
 
 export interface UserConversacion {
   id: string
@@ -65,6 +77,11 @@ export interface Conversacion {
   created_at?: string
 }
 
+export interface ConversacionWithDetails extends Conversacion {
+  whatsapp_ai: WhatsappAI | null
+  user_conversacion: UserConversacion | null
+}
+
 export interface Mensaje {
   id: string
   conversacion_id: string
@@ -74,6 +91,65 @@ export interface Mensaje {
   responses_api_correlation_id: string | null
   metadata: Record<string, unknown>
   created_at: string
+}
+
+// ─── Legacy UI conversation types (v1 dashboard) ─────────
+
+export interface Conversation {
+  id: string
+  empresa_id: string | null
+  contact_id: string | null
+  channel: 'whatsapp' | 'instagram' | 'sms'
+  mode: 'ia' | 'manual'
+  stage: string
+  crm_stage: string
+  agent_id: string | null
+  ia_agent_id: string | null
+  unread: number
+  last_message: string | null
+  last_message_at: string | null
+  last_client_response_at: string | null
+  appointment_date: string | null
+  appointment_time: string | null
+  property_interest: string | null
+  budget: string | null
+  business_type: string | null
+  city_of_interest: string | null
+  portal: string | null
+  property_code: string | null
+  consulted_properties: string[]
+  tags: string[]
+  created_at: string
+  updated_at: string
+}
+
+export interface Contact {
+  id: string
+  empresa_id: string | null
+  nombre: string
+  phone: string
+  email: string | null
+  avatar_url: string | null
+  location: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface Message {
+  id: string
+  conversation_id: string
+  sender: 'customer' | 'ia' | 'agent'
+  type: 'text' | 'audio' | 'image' | 'document'
+  text: string | null
+  duration: string | null
+  file_name: string | null
+  file_size: string | null
+  image_url: string | null
+  created_at: string
+}
+
+export interface ConversationWithContact extends Conversation {
+  contacts: Contact | null
 }
 
 // ─── Propiedades ─────────────────────────────────────────
@@ -221,7 +297,7 @@ export interface Cita {
   id: string
   created_at: string
   empresa_id: string
-  lead_id: string
+  lead_id: string | null
   agente_id: string | null
   propiedad_id: string | null
   fecha_hora: string
@@ -229,6 +305,8 @@ export interface Cita {
   estado: EstadoCita
   notas: string | null
   confirmada_por_ia: boolean
+  nombre_contacto: string | null
+  telefono: string | null
   metadata: Record<string, unknown>
 }
 
@@ -271,6 +349,7 @@ export interface AgenteIA {
   created_at: string
   updated_at: string
   empresa_id: string
+  empresa_nombre: string | null
   nombre: string
   canal: CanalAgente
   assistant_id: string | null
@@ -285,6 +364,10 @@ export interface AgenteIA {
   ultimo_test: string | null
   estadisticas: { mensajes_enviados: number; llamadas_realizadas: number }
   metadata: Record<string, unknown>
+}
+
+export interface AgenteIAWithEmpresa extends AgenteIA {
+  empresas: { nombre: string; plan: string } | null
 }
 
 // ─── Pagos ───────────────────────────────────────────────
@@ -383,4 +466,76 @@ export interface Documento {
   url: string
   tipo: string | null
   metadata: Record<string, unknown>
+}
+
+// ─── Callbell / WhatsApp webhook ─────────────────────────
+
+export interface CallbellWebhookPayload {
+  event: string
+  payload: {
+    to: string
+    from: string
+    text: string | null
+    status: string
+    channel: string
+    contact: {
+      name: string | null
+      uuid: string
+      source: string
+      phoneNumber: string
+      conversationHref: string
+    }
+  }
+}
+
+// ─── Responses API (Azure OpenAI proxy) ──────────────────
+
+export interface ToolDefinition {
+  type: 'function'
+  name: string
+  description: string
+  parameters: Record<string, unknown>
+}
+
+export interface FunctionCall {
+  type: 'function_call'
+  id: string
+  name: string
+  arguments: string
+}
+
+export interface ToolResult {
+  tool_call_id: string
+  output: string
+}
+
+export interface ResponsesAPIRequest {
+  assistant_id: string
+  content: string
+  previous_response_id?: string | null
+  tools?: ToolDefinition[]
+  tool_results?: ToolResult[]
+}
+
+export interface ResponsesAPIResponse {
+  status: 'completed' | 'requires_action' | 'failed'
+  output_text?: string
+  output?: FunctionCall[]
+  next_previous_response_id: string
+}
+
+// ─── Property search ─────────────────────────────────────
+
+export interface PropertySearchParams {
+  empresa_id?: string
+  tipo_inmueble?: string
+  tipo_negocio?: string
+  ciudad?: string
+  precio_min?: number
+  precio_max?: number
+  habitaciones_min?: number
+  area_min?: number
+  caracteristicas?: string
+  codigo?: string
+  limite?: number
 }

@@ -3,7 +3,7 @@ import { executeToolCall } from './tool-executor'
 import { TOOL_DEFINITIONS } from './tool-definitions'
 import { createAdminClient } from '../supabase/admin'
 import { logger } from '../logger'
-import type { Conversacion, WhatsappAI } from '../types'
+import type { Conversacion, AgenteIA } from '../types'
 
 const MAX_ITERATIONS = 5
 
@@ -15,10 +15,13 @@ export interface AgentResult {
 
 export async function processMessage(params: {
   conversacion: Conversacion
-  whatsappAI: WhatsappAI
+  whatsappAI: AgenteIA
   userMessage: string
 }): Promise<AgentResult> {
   const { conversacion, whatsappAI, userMessage } = params
+  if (!whatsappAI.assistant_id) {
+    throw new Error(`Agent ${whatsappAI.id} has no assistant_id configured`)
+  }
   const db = createAdminClient()
   const collectedProperties: any[] = []
 
@@ -38,7 +41,7 @@ export async function processMessage(params: {
       conversacion_id: conversacion.id,
       empresa_id: whatsappAI.empresa_id,
       context: { iteration: iterations, tools: apiResponse.output?.map((t) => t.name) },
-    } as any)
+    })
 
     const toolResults = await Promise.all(
       (apiResponse.output ?? []).map(async (toolCall) => {

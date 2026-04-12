@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(req: NextRequest) {
-  const { empresa_id, propiedad_codigo, nombre_contacto, telefono, fecha_preferida } = await req.json()
-  if (!empresa_id || !telefono || !fecha_preferida) {
+  const { empresa_id, propiedad_codigo, nombre_contacto, telefono, fecha_hora } = await req.json()
+  if (!empresa_id || !telefono || !fecha_hora) {
     return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 })
   }
 
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await db
     .from('citas')
-    .insert({ empresa_id, propiedad_id, nombre_contacto, telefono, fecha_preferida, estado: 'pendiente' })
+    .insert({ empresa_id, propiedad_id, nombre_contacto, telefono, fecha_hora, estado: 'programada' })
     .select('id')
     .single()
 

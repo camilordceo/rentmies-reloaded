@@ -3,7 +3,7 @@ import { createAdminClient } from '../../supabase/admin'
 interface AgendarCitaParams {
   empresa_id: string
   propiedad_codigo?: string
-  fecha_preferida: string
+  fecha_hora: string
   nombre_contacto?: string
   telefono?: string
 }
@@ -28,10 +28,10 @@ export async function agendarCita(params: AgendarCitaParams) {
     .insert({
       empresa_id: params.empresa_id,
       propiedad_id,
-      fecha_preferida: params.fecha_preferida,
+      fecha_hora: params.fecha_hora,
       nombre_contacto: params.nombre_contacto ?? null,
       telefono: params.telefono ?? null,
-      estado: 'pendiente',
+      estado: 'programada',
     })
     .select('id')
     .single()
@@ -41,6 +41,6 @@ export async function agendarCita(params: AgendarCitaParams) {
   return {
     confirmado: true,
     cita_id: data.id,
-    mensaje: `Cita agendada para ${params.fecha_preferida}. Un agente confirmará el horario exacto.`,
+    mensaje: `Cita agendada para ${params.fecha_hora}. Un agente confirmará el horario exacto.`,
   }
 }

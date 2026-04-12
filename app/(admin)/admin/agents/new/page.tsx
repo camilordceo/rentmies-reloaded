@@ -1,21 +1,14 @@
 export const dynamic = 'force-dynamic'
 
-import { createClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { AgentForm } from '@/components/agents/agent-form'
 import type { Empresa } from '@/lib/types'
 
-function getDB() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
-
 export default async function NewAgentPage() {
-  const supabase = getDB()
-  const { data: empresas } = await supabase
+  const db = createAdminClient()
+  const { data: empresas } = await db
     .from('empresas')
     .select('id, nombre, plan, activo')
     .eq('activo', true)

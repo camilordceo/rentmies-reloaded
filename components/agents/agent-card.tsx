@@ -3,10 +3,10 @@
 import Link from 'next/link'
 import { Bot, Phone, Building2, MessageSquare, Pencil, Power } from 'lucide-react'
 import { AgentStatusBadge } from './agent-status-badge'
-import type { WhatsappAIWithEmpresa } from '@/lib/types'
+import type { AgenteIAWithEmpresa } from '@/lib/types'
 
 interface AgentCardProps {
-  agent: WhatsappAIWithEmpresa
+  agent: AgenteIAWithEmpresa
   conversationCount?: number
   onToggle?: (id: string, activo: boolean) => void
 }
@@ -22,7 +22,7 @@ export function AgentCard({ agent, conversationCount = 0, onToggle }: AgentCardP
           </div>
           <div>
             <h3 className="font-medium text-[#1a1a1a] text-sm leading-tight">
-              {agent.nombre_agente || 'Sin nombre'}
+              {agent.nombre || 'Sin nombre'}
             </h3>
             <p className="text-xs text-[#6b7280] mt-0.5">{agent.empresa_nombre}</p>
           </div>
@@ -38,7 +38,7 @@ export function AgentCard({ agent, conversationCount = 0, onToggle }: AgentCardP
         </div>
         <div className="flex items-center gap-2 text-xs text-[#6b7280]">
           <Building2 className="w-3.5 h-3.5 flex-shrink-0" />
-          <span className="truncate">{agent.empresas?.nombre || agent.empresa_nombre}</span>
+          <span className="truncate">{agent.empresas?.nombre ?? agent.empresa_nombre}</span>
         </div>
         <div className="flex items-center gap-2 text-xs text-[#6b7280]">
           <MessageSquare className="w-3.5 h-3.5 flex-shrink-0" />

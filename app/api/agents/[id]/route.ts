@@ -20,7 +20,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   if (auth.error) return auth.error
 
   const { data, error } = await auth.db
-    .from('whatsapp_ai')
+    .from('agentes_ia')
     .select('*, empresas(nombre, plan)')
     .eq('id', params.id)
     .single()
@@ -44,12 +44,21 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
+  // Map legacy field names to agentes_ia schema
+  if (body.nombre_agente !== undefined) {
+    body.nombre = body.nombre_agente
+    delete body.nombre_agente
+  }
+  if (body.configuracion_extra !== undefined) {
+    body.metadata = body.configuracion_extra
+    delete body.configuracion_extra
+  }
   if (body.numero_whatsapp) {
     body.numero_whatsapp = (body.numero_whatsapp as string).replace(/[^\d]/g, '')
   }
 
   const { data, error } = await auth.db
-    .from('whatsapp_ai')
+    .from('agentes_ia')
     .update(body)
     .eq('id', params.id)
     .select()
@@ -67,7 +76,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   const auth = await requireAdmin()
   if (auth.error) return auth.error
 
-  const { error } = await auth.db.from('whatsapp_ai').delete().eq('id', params.id)
+  const { error } = await auth.db.from('agentes_ia').delete().eq('id', params.id)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

@@ -4,10 +4,10 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Search } from 'lucide-react'
 import { AgentCard } from '@/components/agents/agent-card'
-import type { WhatsappAIWithEmpresa } from '@/lib/types'
+import type { AgenteIAWithEmpresa } from '@/lib/types'
 
 interface AgentsClientWrapperProps {
-  agents: WhatsappAIWithEmpresa[]
+  agents: AgenteIAWithEmpresa[]
   countMap: Record<string, number>
 }
 
@@ -20,9 +20,9 @@ export function AgentsClientWrapper({ agents, countMap }: AgentsClientWrapperPro
     return agents.filter((a) => {
       const matchSearch =
         !search ||
-        a.nombre_agente?.toLowerCase().includes(search.toLowerCase()) ||
-        a.empresa_nombre.toLowerCase().includes(search.toLowerCase()) ||
-        a.numero_whatsapp.includes(search)
+        a.nombre.toLowerCase().includes(search.toLowerCase()) ||
+        (a.empresa_nombre ?? '').toLowerCase().includes(search.toLowerCase()) ||
+        (a.numero_whatsapp ?? '').includes(search)
 
       const matchStatus =
         filterStatus === 'all' ||

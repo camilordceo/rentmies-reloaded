@@ -58,14 +58,14 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
       type: 'object',
       properties: {
         propiedad_codigo: { type: 'string', description: 'Código de la propiedad' },
-        fecha_preferida: {
+        fecha_hora: {
           type: 'string',
           description: "Fecha y hora en texto libre. Ej: 'mañana a las 3pm'",
         },
         nombre_contacto: { type: 'string', description: 'Nombre del contacto' },
         telefono: { type: 'string', description: 'Teléfono del contacto' },
       },
-      required: ['fecha_preferida'],
+      required: ['fecha_hora'],
     },
   },
   {

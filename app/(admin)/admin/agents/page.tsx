@@ -2,27 +2,19 @@ export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
 import { Plus, Bot } from 'lucide-react'
-import { createClient } from '@supabase/supabase-js'
-import { AgentCard } from '@/components/agents/agent-card'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { AgentsClientWrapper } from './agents-client-wrapper'
-import type { WhatsappAIWithEmpresa } from '@/lib/types'
-
-function getDB() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
+import type { AgenteIAWithEmpresa } from '@/lib/types'
 
 export default async function AgentsPage() {
-  const supabase = getDB()
+  const db = createAdminClient()
 
-  const { data: agents } = await supabase
-    .from('whatsapp_ai')
+  const { data: agents } = await db
+    .from('agentes_ia')
     .select('*, empresas(nombre, plan)')
     .order('created_at', { ascending: false })
 
-  const { data: convCounts } = await supabase
+  const { data: convCounts } = await db
     .from('conversacion')
     .select('whatsapp_ai_id')
     .eq('activa', true)
@@ -32,7 +24,7 @@ export default async function AgentsPage() {
     countMap[row.whatsapp_ai_id] = (countMap[row.whatsapp_ai_id] || 0) + 1
   }
 
-  const activeCount = (agents || []).filter((a: WhatsappAIWithEmpresa) => a.activo).length
+  const activeCount = (agents || []).filter((a: AgenteIAWithEmpresa) => a.activo).length
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -71,7 +63,7 @@ export default async function AgentsPage() {
         </div>
       ) : (
         <AgentsClientWrapper
-          agents={agents as WhatsappAIWithEmpresa[]}
+          agents={agents as AgenteIAWithEmpresa[]}
           countMap={countMap}
         />
       )}

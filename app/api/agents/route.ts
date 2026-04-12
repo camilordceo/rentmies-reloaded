@@ -14,7 +14,7 @@ async function requireAdmin() {
   return { db }
 }
 
-// GET /api/agents — list all WhatsApp AI agents
+// GET /api/agents — list all AI agents
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin()
   if (auth.error) return auth.error
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   const empresaId = searchParams.get('empresa_id')
 
   let query = auth.db
-    .from('whatsapp_ai')
+    .from('agentes_ia')
     .select('*, empresas(nombre, plan)')
     .order('created_at', { ascending: false })
 
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ data })
 }
 
-// POST /api/agents — create new WhatsApp AI agent
+// POST /api/agents — create new AI agent
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin()
   if (auth.error) return auth.error
@@ -52,24 +52,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const required = ['empresa_id', 'empresa_nombre', 'assistant_id', 'channel_uuid_callbell', 'numero_whatsapp']
+  const required = ['empresa_id', 'assistant_id', 'channel_uuid_callbell', 'numero_whatsapp']
   for (const field of required) {
     if (!body[field]) {
       return NextResponse.json({ error: `Missing field: ${field}` }, { status: 400 })
     }
   }
 
+  // Accept nombre_agente (legacy form field) mapped to nombre
+  const nombre = (body.nombre_agente as string) || (body.nombre as string) || null
+  const metadata = body.configuracion_extra ?? body.metadata ?? {}
+
   const { data, error } = await auth.db
-    .from('whatsapp_ai')
+    .from('agentes_ia')
     .insert({
       empresa_id: body.empresa_id,
-      empresa_nombre: body.empresa_nombre,
+      empresa_nombre: body.empresa_nombre ?? null,
+      nombre: nombre ?? 'Agente WhatsApp',
+      canal: (body.canal as string) || 'whatsapp',
       assistant_id: body.assistant_id,
       channel_uuid_callbell: body.channel_uuid_callbell,
       numero_whatsapp: (body.numero_whatsapp as string).replace(/[^\d]/g, ''),
-      nombre_agente: body.nombre_agente || null,
       activo: body.activo ?? true,
-      configuracion_extra: body.configuracion_extra || {},
+      metadata,
     })
     .select()
     .single()

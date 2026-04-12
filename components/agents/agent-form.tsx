@@ -3,10 +3,10 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Save, Trash2, X, Info } from 'lucide-react'
-import type { WhatsappAI, Empresa } from '@/lib/types'
+import type { AgenteIA, Empresa } from '@/lib/types'
 
 interface AgentFormProps {
-  agent?: WhatsappAI
+  agent?: AgenteIA
   empresas: Empresa[]
   mode: 'create' | 'edit'
 }
@@ -24,11 +24,9 @@ export function AgentForm({ agent, empresas, mode }: AgentFormProps) {
     assistant_id: agent?.assistant_id || '',
     channel_uuid_callbell: agent?.channel_uuid_callbell || '',
     numero_whatsapp: agent?.numero_whatsapp || '',
-    nombre_agente: agent?.nombre_agente || '',
+    nombre: agent?.nombre || '',
     activo: agent?.activo ?? true,
-    configuracion_extra: agent?.configuracion_extra
-      ? JSON.stringify(agent.configuracion_extra, null, 2)
-      : '{}',
+    metadata: agent?.metadata ? JSON.stringify(agent.metadata, null, 2) : '{}',
   })
 
   const [jsonError, setJsonError] = useState<string | null>(null)
@@ -43,7 +41,7 @@ export function AgentForm({ agent, empresas, mode }: AgentFormProps) {
   }
 
   function handleJsonChange(value: string) {
-    setForm((f) => ({ ...f, configuracion_extra: value }))
+    setForm((f) => ({ ...f, metadata: value }))
     try {
       JSON.parse(value)
       setJsonError(null)
@@ -57,19 +55,16 @@ export function AgentForm({ agent, empresas, mode }: AgentFormProps) {
     setSaving(true)
     setError(null)
 
-    let parsedConfig = {}
+    let parsedMetadata = {}
     try {
-      parsedConfig = JSON.parse(form.configuracion_extra)
+      parsedMetadata = JSON.parse(form.metadata)
     } catch {
-      setError('Configuración extra tiene JSON inválido')
+      setError('Configuración tiene JSON inválido')
       setSaving(false)
       return
     }
 
-    const payload = {
-      ...form,
-      configuracion_extra: parsedConfig,
-    }
+    const payload = { ...form, metadata: parsedMetadata }
 
     try {
       const url = mode === 'create' ? '/api/agents' : `/api/agents/${agent!.id}`
@@ -142,8 +137,8 @@ export function AgentForm({ agent, empresas, mode }: AgentFormProps) {
           <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">Nombre del agente AI</label>
           <input
             type="text"
-            value={form.nombre_agente}
-            onChange={(e) => setForm((f) => ({ ...f, nombre_agente: e.target.value }))}
+            value={form.nombre}
+            onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
             placeholder="ej: Isabella"
             className="w-full h-10 px-3 border border-[#e5e5e5] rounded-lg text-sm text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#40d99d] focus:border-transparent"
           />
@@ -220,10 +215,10 @@ export function AgentForm({ agent, empresas, mode }: AgentFormProps) {
       {/* JSON config */}
       <div>
         <label className="block text-sm font-medium text-[#1a1a1a] mb-1.5">
-          Configuración extra <span className="text-[#6b7280] font-normal">(JSON)</span>
+          Configuración <span className="text-[#6b7280] font-normal">(JSON)</span>
         </label>
         <textarea
-          value={form.configuracion_extra}
+          value={form.metadata}
           onChange={(e) => handleJsonChange(e.target.value)}
           rows={4}
           className={`w-full px-3 py-2 border rounded-lg text-sm font-mono text-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#40d99d] focus:border-transparent resize-none ${
