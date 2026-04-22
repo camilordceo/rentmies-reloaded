@@ -31,7 +31,10 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
           type: 'string',
           description: 'Búsqueda libre: terraza, piscina, parqueadero, vista, amoblado, etc.',
         },
-        codigo: { type: 'string', description: 'Código específico de propiedad' },
+        codigo: {
+          type: 'string',
+          description: 'Código de propiedad — acepta código interno, código Finca Raíz, o código Metro Cuadrado',
+        },
         limite: { type: 'integer', description: 'Máx resultados. Default 5.' },
       },
       required: [],
