@@ -15,8 +15,14 @@ function extractInsight(text: string, identifier: string): string | undefined {
 }
 
 export async function POST(req: NextRequest) {
-  const { empresa_id, message, session_id, previous_response_id } = await req.json()
+  const { empresa_id, message, session_id, previous_response_id, intents } = await req.json()
   if (!message) return NextResponse.json({ error: 'message requerido' }, { status: 400 })
+
+  // Prepend intent context when provided by the Atlas portal
+  const enrichedMessage =
+    intents && Array.isArray(intents) && intents.length > 0
+      ? `[Intenciones del usuario: ${intents.join(', ')}]\n\n${message}`
+      : message
 
   const db = createAdminClient()
 
@@ -106,13 +112,13 @@ export async function POST(req: NextRequest) {
   }
 
   if (conversacion) {
-    await db.from('mensaje').insert({ conversacion_id: conversacion.id, rol: 'user', texto: message, metadata: {} })
+    await db.from('mensaje').insert({ conversacion_id: conversacion.id, rol: 'user', texto: enrichedMessage, metadata: {} })
   }
 
   const result = await processMessage({
     conversacion: conversacion ?? { id: 'temp', whatsapp_ai_id: agente.id, user_conversacion_id: null, activa: true, ultimo_mensaje_at: null, last_response_id: previous_response_id ?? null, metadata: {} },
     whatsappAI: agente,
-    userMessage: message,
+    userMessage: enrichedMessage,
   })
 
   if (conversacion) {

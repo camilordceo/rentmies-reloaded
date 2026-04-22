@@ -1,0 +1,495 @@
+'use client'
+import { useState, useRef } from 'react'
+import { useAtlasStore, fmtCOP, computeMatchScore } from '@/store/atlas-store'
+import { EmaSphere } from './ema-sphere'
+import { Waveform } from './waveform'
+import { EmaDictation } from './ema-dictation'
+
+const CHAPTER_LINES: Record<number, string[]> = {
+  0: [
+    'EMA escuchando.',
+    'Elige intenciones, o escríbeme.',
+    'Con 3 intenciones compongo tu curaduría.',
+  ],
+  1: [
+    'Reordené las propiedades por ti.',
+    'Las mejores flotan al frente.',
+    'Toca cualquiera para entrar.',
+  ],
+  2: [
+    'Tour virtual activado.',
+    'Cada espacio tiene su propia luz.',
+    '¿Agendamos una visita privada?',
+  ],
+  3: [
+    'Al cerrar, el dinero vuelve a ti.',
+    '1% en venta, 10% en arriendo.',
+    'Sin letra chica. Sin coreografía financiera.',
+  ],
+}
+
+export function EmaPanelAtlas() {
+  const {
+    emaPanelOpen,
+    toggleEmaPanel,
+    emaListening,
+    setEmaListening,
+    emaMode,
+    setEmaMode,
+    activeChapter,
+    activeIntents,
+    properties,
+    emaMessages,
+    addEmaMessage,
+    emaProcessing,
+    setEmaProcessing,
+    sessionId,
+    responseId,
+    setResponseId,
+    openDrawer,
+  } = useAtlasStore((s) => ({
+    emaPanelOpen: s.emaPanelOpen,
+    toggleEmaPanel: s.toggleEmaPanel,
+    emaListening: s.emaListening,
+    setEmaListening: s.setEmaListening,
+    emaMode: s.emaMode,
+    setEmaMode: s.setEmaMode,
+    activeChapter: s.activeChapter,
+    activeIntents: s.activeIntents,
+    properties: s.properties,
+    emaMessages: s.emaMessages,
+    addEmaMessage: s.addEmaMessage,
+    emaProcessing: s.emaProcessing,
+    setEmaProcessing: s.setEmaProcessing,
+    sessionId: s.sessionId,
+    responseId: s.responseId,
+    setResponseId: s.setResponseId,
+    openDrawer: s.openDrawer,
+  }))
+
+  const [input, setInput] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const topMatches = [...properties]
+    .map((p) => ({ ...p, match_score: computeMatchScore(p, activeIntents) }))
+    .sort((a, b) => b.match_score - a.match_score)
+    .slice(0, 3)
+
+  async function sendMessage(text: string) {
+    if (!text.trim() || emaProcessing) return
+    const userMsg = text.trim()
+    setInput('')
+    addEmaMessage({ role: 'user', text: userMsg })
+    setEmaProcessing(true)
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMsg,
+          session_id: sessionId,
+          previous_response_id: responseId,
+          intents: activeIntents,
+        }),
+      })
+      const data = await res.json()
+      addEmaMessage({ role: 'assistant', text: data.text })
+      if (data.response_id) setResponseId(data.response_id)
+    } catch {
+      addEmaMessage({ role: 'assistant', text: 'Hubo un error. Intenta de nuevo.' })
+    } finally {
+      setEmaProcessing(false)
+    }
+  }
+
+  // Collapsed: floating bubble
+  if (!emaPanelOpen) {
+    return (
+      <button
+        onClick={toggleEmaPanel}
+        style={{
+          position: 'fixed',
+          right: 24,
+          bottom: 100,
+          zIndex: 85,
+          width: 68,
+          height: 68,
+          borderRadius: '50%',
+          border: 'none',
+          cursor: 'pointer',
+          padding: 0,
+          background: 'rgba(28,27,27,0.94)',
+          boxShadow: '0 12px 40px -6px rgba(28,27,27,0.1), 0 0 28px rgba(64,217,157,0.3)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          animation: 'rise-in .4s ease-out',
+        }}
+      >
+        <EmaSphere size={44} />
+        {emaListening && (
+          <span
+            style={{
+              position: 'absolute',
+              top: 5,
+              right: 5,
+              width: 10,
+              height: 10,
+              borderRadius: '50%',
+              background: '#4fffb4',
+              boxShadow: '0 0 8px #4fffb4',
+              animation: 'breathe 1.4s infinite',
+            }}
+          />
+        )}
+      </button>
+    )
+  }
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        right: 24,
+        top: 84,
+        bottom: 24,
+        zIndex: 85,
+        width: 356,
+        animation: 'rise-in .5s ease-out',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+      }}
+    >
+      {/* Header */}
+      <div
+        className="atlas-glass-dark"
+        style={{ borderRadius: 22, padding: 18, color: '#fff' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <EmaSphere size={42} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.01em' }}>EMA</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: emaListening ? '#4fffb4' : 'rgba(255,255,255,0.3)',
+                  boxShadow: emaListening ? '0 0 8px #4fffb4' : 'none',
+                  animation: emaListening ? 'breathe 1.6s infinite' : 'none',
+                }}
+              />
+              <span
+                className="atlas-mono atlas-eyebrow"
+                style={{ fontSize: 8, color: emaListening ? '#4fffb4' : 'rgba(255,255,255,0.5)' }}
+              >
+                {emaListening ? 'Escuchando en vivo' : 'En pausa'}
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={() => setEmaListening(!emaListening)}
+            style={{
+              border: 'none',
+              cursor: 'pointer',
+              width: 30,
+              height: 30,
+              borderRadius: '50%',
+              background: emaListening ? '#40d99d' : 'rgba(255,255,255,0.1)',
+              color: emaListening ? '#004d35' : '#fff',
+              fontSize: 11,
+              fontWeight: 700,
+            }}
+          >
+            {emaListening ? '❚❚' : '▶'}
+          </button>
+          <button
+            onClick={toggleEmaPanel}
+            style={{
+              border: 'none',
+              cursor: 'pointer',
+              width: 30,
+              height: 30,
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.08)',
+              color: '#fff',
+              fontSize: 16,
+            }}
+          >
+            ×
+          </button>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div
+        className="atlas-glass-dark"
+        style={{
+          borderRadius: 22,
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          color: '#fff',
+        }}
+      >
+        {/* Tabs */}
+        <div style={{ display: 'flex', padding: '12px 12px 0', gap: 6 }}>
+          {([['resumen', 'Resumen en vivo'], ['dialogo', 'Diálogo']] as const).map(([id, label]) => (
+            <button
+              key={id}
+              onClick={() => setEmaMode(id)}
+              style={{
+                flex: 1,
+                padding: '7px 10px',
+                borderRadius: 10,
+                border: 'none',
+                cursor: 'pointer',
+                background: emaMode === id ? 'rgba(64,217,157,0.18)' : 'transparent',
+                color: emaMode === id ? '#4fffb4' : 'rgba(255,255,255,0.5)',
+                fontSize: 10,
+                fontWeight: 600,
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                transition: 'all .2s',
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }} className="hide-scrollbar">
+          {emaMode === 'resumen' ? (
+            <div>
+              {/* Intents */}
+              <div className="atlas-mono atlas-eyebrow" style={{ color: 'rgba(255,255,255,0.5)', marginBottom: 8, fontSize: 8 }}>
+                Tus intenciones · {activeIntents.length}
+              </div>
+              {activeIntents.length === 0 ? (
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: 'rgba(255,255,255,0.5)',
+                    padding: '12px 14px',
+                    borderRadius: 10,
+                    background: 'rgba(255,255,255,0.04)',
+                    marginBottom: 14,
+                    fontStyle: 'italic',
+                  }}
+                >
+                  Sin intenciones todavía. Ve al Capítulo 01.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 14 }}>
+                  {activeIntents.map((it) => (
+                    <span
+                      key={it}
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 600,
+                        color: '#4fffb4',
+                        background: 'rgba(64,217,157,0.14)',
+                        padding: '4px 9px',
+                        borderRadius: 999,
+                      }}
+                    >
+                      ✦ {it}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Top matches */}
+              <div
+                className="atlas-mono atlas-eyebrow"
+                style={{ color: 'rgba(255,255,255,0.5)', marginBottom: 8, fontSize: 8, display: 'flex', justifyContent: 'space-between' }}
+              >
+                <span>Top curaduría</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 14 }}>
+                {topMatches.map((p) => (
+                  <div
+                    key={p.id}
+                    onClick={() => openDrawer(p)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 9,
+                      padding: 9,
+                      borderRadius: 11,
+                      background: 'rgba(255,255,255,0.05)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 7,
+                        backgroundImage: `url(${p.imagenes?.[0] ?? ''})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        flexShrink: 0,
+                        position: 'relative',
+                      }}
+                    >
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: -4,
+                          right: -4,
+                          width: 20,
+                          height: 20,
+                          borderRadius: '50%',
+                          background: '#40d99d',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 7,
+                          fontWeight: 800,
+                          color: '#004d35',
+                        }}
+                      >
+                        {p.match_score}
+                      </div>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{ fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      >
+                        {p.ubicacion}
+                      </div>
+                      <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)' }}>{fmtCOP(p.precio)}</div>
+                    </div>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: '#4fffb4', whiteSpace: 'nowrap' }}>
+                      +{fmtCOP(p.cashback_amount)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Cashback pool */}
+              <div
+                style={{
+                  background: 'linear-gradient(135deg, #004d35, #006c4a)',
+                  borderRadius: 12,
+                  padding: '12px 14px',
+                }}
+              >
+                <div className="atlas-mono atlas-eyebrow" style={{ color: '#4fffb4', marginBottom: 4, fontSize: 8 }}>
+                  Cashback potencial · top 3
+                </div>
+                <div style={{ fontSize: 26, fontWeight: 800, color: '#4fffb4', letterSpacing: '-0.02em', lineHeight: 1 }}>
+                  +{fmtCOP(topMatches.reduce((s, p) => s + (p.cashback_amount ?? 0), 0))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div>
+              {/* Dictation OR chat messages */}
+              {emaMessages.length === 0 ? (
+                <EmaDictation key={activeChapter} lines={CHAPTER_LINES[activeChapter] ?? CHAPTER_LINES[0]} />
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {emaMessages.slice(-6).map((msg, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        fontSize: msg.role === 'assistant' ? 14 : 12,
+                        color: msg.role === 'assistant' ? '#fff' : 'rgba(255,255,255,0.6)',
+                        fontWeight: msg.role === 'assistant' ? 500 : 400,
+                        lineHeight: 1.45,
+                        textAlign: msg.role === 'user' ? 'right' : 'left',
+                        background: msg.role === 'user' ? 'rgba(64,217,157,0.1)' : 'transparent',
+                        padding: msg.role === 'user' ? '8px 10px' : 0,
+                        borderRadius: 10,
+                      }}
+                    >
+                      {msg.text}
+                    </div>
+                  ))}
+                  {emaProcessing && (
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' }}>
+                      EMA está pensando…
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Waveform */}
+              <div
+                style={{
+                  marginTop: 14,
+                  background: 'rgba(255,255,255,0.04)',
+                  borderRadius: 10,
+                  padding: 12,
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 7 }}>
+                  <span className="atlas-mono atlas-eyebrow" style={{ color: 'rgba(255,255,255,0.5)', fontSize: 8 }}>
+                    Voz activa
+                  </span>
+                  <span className="atlas-mono" style={{ color: '#4fffb4', fontSize: 8, fontWeight: 700 }}>
+                    128Hz · Cálido
+                  </span>
+                </div>
+                <Waveform active={emaListening} bars={26} color="#40d99d" />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Input bar */}
+        <div
+          style={{
+            padding: 10,
+            background: 'rgba(0,0,0,0.22)',
+            display: 'flex',
+            gap: 7,
+            alignItems: 'center',
+          }}
+        >
+          <input
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && sendMessage(input)}
+            placeholder="Escribe o habla a EMA…"
+            style={{
+              flex: 1,
+              background: 'transparent',
+              border: 'none',
+              outline: 'none',
+              color: '#fff',
+              fontSize: 12,
+              fontFamily: 'inherit',
+              padding: '7px 9px',
+            }}
+          />
+          <button
+            onClick={() => sendMessage(input)}
+            disabled={emaProcessing || !input.trim()}
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 9,
+              border: 'none',
+              cursor: 'pointer',
+              background: '#40d99d',
+              color: '#004d35',
+              fontSize: 13,
+              fontWeight: 800,
+              opacity: emaProcessing || !input.trim() ? 0.5 : 1,
+            }}
+          >
+            →
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}

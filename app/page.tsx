@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { MessageSquare, BarChart3, Clock, Building2, ArrowRight, Check, Sparkles, Zap } from 'lucide-react'
+import { PLANES } from '@/lib/constants'
 
 export default function LandingPage() {
   return (
@@ -132,63 +133,54 @@ export default function LandingPage() {
           <h2 className="text-3xl font-bold tracking-tight">Precios simples y transparentes</h2>
           <p className="text-on-surface/50 mt-2">Sin contratos largos. Cancela cuando quieras.</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-          {[
-            {
-              name: 'Starter',
-              price: '$299.000',
-              period: '/mes',
-              features: ['1 agente IA', 'Hasta 500 conversaciones', 'Dashboard básico', 'Soporte email'],
-              cta: 'Empezar',
-              highlight: false,
-            },
-            {
-              name: 'Pro',
-              price: '$599.000',
-              period: '/mes',
-              features: ['3 agentes IA', 'Conversaciones ilimitadas', 'Analytics avanzado', 'Soporte prioritario', 'Multi-ciudad'],
-              cta: 'Empezar Pro',
-              highlight: true,
-            },
-          ].map((plan) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          {(Object.entries(PLANES) as [string, typeof PLANES[keyof typeof PLANES]][]).map(([key, plan], i) => {
+            const highlight = key === 'pro'
+            const isEnterprise = key === 'enterprise'
+            const priceDisplay = isEnterprise
+              ? 'A la medida'
+              : `$${plan.precio.toLocaleString('es-CO')}`
+            const cta = key === 'starter' ? 'Empezar' : key === 'pro' ? 'Empezar Pro' : 'Contactar'
+            return (
             <div
-              key={plan.name}
+              key={key}
               className={`p-8 rounded-2xl shadow-editorial ${
-                plan.highlight
+                highlight
                   ? 'bg-authority-green text-white'
                   : 'bg-surface-container-lowest'
               }`}
             >
-              {plan.highlight && (
+              {highlight && (
                 <div className="inline-flex items-center gap-1.5 bg-brand-teal text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-4">
                   <Sparkles className="w-3 h-3" /> Recomendado
                 </div>
               )}
-              <h3 className={`font-bold text-lg mb-1 ${plan.highlight ? 'text-white' : 'text-on-surface'}`}>{plan.name}</h3>
+              <h3 className={`font-bold text-lg mb-1 ${highlight ? 'text-white' : 'text-on-surface'}`}>{plan.nombre}</h3>
               <div className="flex items-end gap-1 mb-6">
-                <span className={`text-3xl font-bold ${plan.highlight ? 'text-brand-teal' : 'text-authority-green'}`}>{plan.price}</span>
-                <span className={`text-sm mb-1 ${plan.highlight ? 'text-white/60' : 'text-on-surface/50'}`}>{plan.period}</span>
+                <span className={`text-3xl font-bold ${highlight ? 'text-brand-teal' : 'text-authority-green'}`}>{priceDisplay}</span>
+                {!isEnterprise && <span className={`text-sm mb-1 ${highlight ? 'text-white/60' : 'text-on-surface/50'}`}>/mes</span>}
               </div>
               <ul className="space-y-2.5 mb-8">
                 {plan.features.map((f) => (
                   <li key={f} className="flex items-center gap-2 text-sm">
-                    <Check className={`w-4 h-4 flex-shrink-0 ${plan.highlight ? 'text-brand-teal' : 'text-brand-teal'}`} />
-                    <span className={plan.highlight ? 'text-white/80' : 'text-on-surface/70'}>{f}</span>
+                    <Check className={`w-4 h-4 flex-shrink-0 text-brand-teal`} />
+                    <span className={highlight ? 'text-white/80' : 'text-on-surface/70'}>{f}</span>
                   </li>
                 ))}
               </ul>
               <Link
-                href="/registro"
+                href={isEnterprise ? '/registro?plan=enterprise' : '/registro'}
                 className={`block text-center py-3 rounded-xl text-sm font-semibold transition-all ${
-                  plan.highlight
+                  highlight
                     ? 'bg-brand-teal text-white hover:bg-brand-teal/90'
                     : 'bg-authority-green text-white hover:bg-authority-green/90'
                 }`}
               >
-                {plan.cta}
+                {cta}
               </Link>
             </div>
-          ))}
+            )
+          })}
         </div>
       </section>
 

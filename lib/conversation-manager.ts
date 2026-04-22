@@ -100,42 +100,46 @@ async function findOrCreateConversacion(
 }
 
 // ─── Anti-spam accumulation ───────────────────────────────────────────────────
-// Waits up to 4s for burst messages, then concatenates them into one request.
+// Uses a DB-level advisory lock (acquire_processing_lock RPC) so only one
+// serverless invocation processes a conversation at a time. Concurrent arrivals
+// within the window save their message and return; the lock holder waits, then
+// fetches all accumulated messages in one shot.
+//
+// Returns null when this invocation should yield (another is already processing).
 
 async function accumulateMessages(
   conversacion: Conversacion,
   savedMessageCreatedAt: string
-): Promise<string[]> {
+): Promise<string[] | null> {
   const db = createAdminClient()
-  const pendingSince = conversacion.metadata?.pending_since as string | undefined
-  const now = Date.now()
 
-  if (pendingSince) {
-    const elapsed = now - new Date(pendingSince).getTime()
-    if (elapsed < ACCUMULATION_DELAY_MS) {
-      await new Promise((r) => setTimeout(r, ACCUMULATION_DELAY_MS - elapsed))
-    }
-  } else {
-    await db
-      .from('conversacion')
-      .update({ metadata: { ...conversacion.metadata, pending_since: new Date().toISOString() } })
-      .eq('id', conversacion.id)
-    await new Promise((r) => setTimeout(r, ACCUMULATION_DELAY_MS))
+  let lockResult: { acquired: boolean; pending_since: string } | null = null
+  try {
+    const { data, error } = await db.rpc('acquire_processing_lock', {
+      p_conversacion_id: conversacion.id,
+      p_window_ms: ACCUMULATION_DELAY_MS,
+    })
+    if (error) throw error
+    lockResult = data as { acquired: boolean; pending_since: string }
+  } catch {
+    // Row locked by concurrent transaction — yield to the holder
+    return null
   }
 
-  const since = pendingSince ?? savedMessageCreatedAt
+  if (!lockResult?.acquired) return null
+
+  const pendingSince = lockResult.pending_since
+  await new Promise((r) => setTimeout(r, ACCUMULATION_DELAY_MS))
+
   const { data } = await db
     .from('mensaje')
     .select('texto')
     .eq('conversacion_id', conversacion.id)
     .eq('rol', 'user')
-    .gte('created_at', since)
+    .gte('created_at', pendingSince)
     .order('created_at', { ascending: true })
 
-  await db
-    .from('conversacion')
-    .update({ metadata: { ...conversacion.metadata, pending_since: null } })
-    .eq('id', conversacion.id)
+  await db.rpc('release_processing_lock', { p_conversacion_id: conversacion.id })
 
   return (data ?? []).map((m: { texto: string }) => m.texto)
 }
@@ -216,7 +220,10 @@ export async function processIncomingMessage(
     .single()
 
   // 5. Accumulate burst messages (anti-spam)
+  // Returns null when another invocation holds the lock — this one yields.
   const texts = await accumulateMessages(conversacion, savedMsg?.created_at ?? new Date().toISOString())
+  if (texts === null) return
+
   const combinedText = texts.length > 0 ? texts.join('\n') : payload.text
 
   // 6. Run agent loop
