@@ -1,6 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { AtlasProperty } from '@/store/atlas-store'
-import { deriveMood, deriveTags } from '@/store/atlas-store'
+import { deriveMood, deriveTags } from '@/lib/atlas-helpers'
 import { AtlasClient } from './atlas-client'
 
 export const revalidate = 60

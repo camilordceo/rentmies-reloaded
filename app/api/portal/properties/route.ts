@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { deriveMood, deriveTags, computeMatchScore } from '@/lib/atlas-helpers'
 import type { AtlasProperty } from '@/store/atlas-store'
-import { deriveMood, deriveTags } from '@/store/atlas-store'
 
 export const revalidate = 60
 
@@ -19,24 +19,25 @@ export async function GET(req: NextRequest) {
 
   let query = db
     .from('propiedades')
-    .select(`
-      id, codigo, ubicacion, ciudad, tipo_inmueble, tipo_negocio,
-      precio, area_m2, habitaciones, banos, parqueaderos, estrato,
-      descripcion, imagenes, cashback_amount, cashback_rate,
-      empresa_id, caracteristicas
-    `)
+    .select(
+      'id, codigo, ubicacion, ciudad, zona, tipo_inmueble, tipo_negocio, ' +
+      'precio, area_m2, habitaciones, banos, parqueaderos, estrato, ' +
+      'descripcion, imagenes, cashback_amount, cashback_rate, ' +
+      'empresa_id, caracteristicas, codigo_finca_raiz, codigo_metro_cuadrado, ' +
+      'codigo_domus, ficha_tecnica_url, video_url'
+    )
     .eq('estado', 'activo')
     .not('precio', 'is', null)
-    .not('imagenes', 'eq', '{}')
+    .gt('precio', 0)
     .order('precio', { ascending: false })
-    .limit(40)
+    .limit(60)
 
-  if (tipo_negocio) query = query.eq('tipo_negocio', tipo_negocio)
-  if (ciudad) query = query.ilike('ciudad', `%${ciudad}%`)
+  if (tipo_negocio) query = query.ilike('tipo_negocio', `%${tipo_negocio}%`)
+  if (ciudad) query = query.or(`ciudad.ilike.%${ciudad}%,ubicacion.ilike.%${ciudad}%`)
   if (precio_min) query = query.gte('precio', Number(precio_min))
   if (precio_max) query = query.lte('precio', Number(precio_max))
   if (habitaciones) query = query.gte('habitaciones', Number(habitaciones))
-  if (tipo_inmueble) query = query.eq('tipo_inmueble', tipo_inmueble)
+  if (tipo_inmueble) query = query.ilike('tipo_inmueble', tipo_inmueble)
 
   const { data, error } = await query
 
@@ -46,32 +47,43 @@ export async function GET(req: NextRequest) {
 
   const rows = (data ?? []) as any[]
 
-  // Score each property by intent overlap
   const scored: AtlasProperty[] = rows.map((row) => {
-    const tags = deriveTags(row as AtlasProperty)
-    const mood = deriveMood(row as AtlasProperty)
-    const text = [row.descripcion, row.ubicacion, row.ciudad, ...tags, mood]
-      .join(' ')
-      .toLowerCase()
-
-    let match_score = 72
-    if (intents.length > 0) {
-      const hits = intents.filter((it) => text.includes(it.toLowerCase())).length
-      match_score = Math.min(99, 60 + Math.round((hits / intents.length) * 35))
-    }
+    const tags = deriveTags(row)
+    const mood = deriveMood(row)
+    // Deterministic jitter so scores are stable between renders
+    const jitter = row.id
+      ? (row.id.charCodeAt(0) + row.id.charCodeAt(row.id.length - 1)) % 20
+      : 10
+    const match_score = intents.length > 0
+      ? computeMatchScore({ ...row, tags, mood }, intents)
+      : 70 + jitter
 
     return {
-      ...row,
+      id: row.id,
+      codigo: row.codigo,
+      ubicacion: row.ubicacion ?? '',
+      ciudad: row.ciudad ?? null,
+      tipo_inmueble: row.tipo_inmueble ?? null,
+      tipo_negocio: row.tipo_negocio ?? null,
+      precio: row.precio,
+      area_m2: row.area_m2 ?? null,
+      habitaciones: row.habitaciones ?? null,
+      banos: row.banos ?? null,
+      parqueaderos: row.parqueaderos ?? null,
+      estrato: row.estrato ?? null,
       imagenes: row.imagenes ?? [],
+      descripcion: row.descripcion ?? null,
+      cashback_amount: row.cashback_amount ?? null,
+      cashback_rate: row.cashback_rate ?? null,
+      empresa_id: row.empresa_id ?? null,
       caracteristicas: row.caracteristicas ?? {},
-      match_score,
-      agent_insight: null,
       tags,
       mood,
-    } as AtlasProperty
+      match_score,
+      agent_insight: null,
+    } satisfies AtlasProperty
   })
 
-  // Sort by match score descending
   scored.sort((a, b) => b.match_score - a.match_score)
 
   return NextResponse.json({ properties: scored, total: scored.length })

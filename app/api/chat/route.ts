@@ -1,19 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { processMessage } from '@/lib/agent/orchestrator'
+import { extractPortalCode } from '@/lib/agent/tools/buscar-propiedades'
 import { deriveMood, deriveTags } from '@/lib/atlas-helpers'
 import type { AtlasProperty } from '@/store/atlas-store'
 
 export const maxDuration = 30
 
-function extractInsight(text: string, identifier: string): string | undefined {
-  if (!identifier) return undefined
-  const sentences = text.split(/(?<=[.!?])\s+/)
-  const match = sentences.find((s) => s.toLowerCase().includes(identifier.toLowerCase()))
-  return match?.trim() ?? undefined
+// Portal defaults — override via env
+const PORTAL_ASSISTANT_ID =
+  process.env.PORTAL_ASSISTANT_ID || 'asst_IbHsOSuSAByiX59OujkQmUbw'
+
+// ── Timestamp helpers ──────────────────────────────────────────────────────
+
+function nowCOT(): string {
+  return new Date().toLocaleString('es-CO', {
+    timeZone: 'America/Bogota',
+    day: '2-digit', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  })
 }
 
-// Map raw tool-call results to full AtlasProperty objects for the portal
+function buildTimestampedContent(message: string, intents: string[]): string {
+  const ts = nowCOT()
+  const intentLine = intents.length > 0
+    ? `\nIntenciones activas: ${intents.join(', ')}`
+    : ''
+
+  // Detect and annotate portal URLs in the message
+  const portalCode = extractPortalCode(message)
+  const codeLine = portalCode
+    ? `\nCódigo portal detectado: ${portalCode}`
+    : ''
+
+  return `[${ts} COT] ${message}${intentLine}${codeLine}`
+}
+
+// ── Property hydration ─────────────────────────────────────────────────────
+
 function hydrateAtlasProperties(toolProps: any[], aiText: string): AtlasProperty[] {
   return toolProps.map((p, idx) => {
     const tags = deriveTags({
@@ -32,9 +56,14 @@ function hydrateAtlasProperties(toolProps: any[], aiText: string): AtlasProperty
       tipo_negocio: p.negocio,
       habitaciones: p.habitaciones,
     })
-    // First AI result gets highest score, decreasing by rank
     const match_score = Math.max(62, 97 - idx * 5)
-    const insight = extractInsight(aiText, p.codigo ?? p.ubicacion ?? '')
+
+    // Pull first sentence mentioning the property as an insight
+    const sentences = aiText.split(/(?<=[.!?])\s+/)
+    const identifier = p.codigo ?? p.ubicacion ?? ''
+    const agent_insight = identifier
+      ? sentences.find(s => s.toLowerCase().includes(identifier.toLowerCase()))?.trim() ?? null
+      : null
 
     return {
       id: p._id ?? p.codigo,
@@ -58,24 +87,24 @@ function hydrateAtlasProperties(toolProps: any[], aiText: string): AtlasProperty
       tags,
       mood,
       match_score,
-      agent_insight: insight ?? null,
+      agent_insight,
     } satisfies AtlasProperty
   })
 }
 
-export async function POST(req: NextRequest) {
-  const { empresa_id, message, session_id, previous_response_id, intents } = await req.json()
-  if (!message) return NextResponse.json({ error: 'message requerido' }, { status: 400 })
+// ── Route handler ──────────────────────────────────────────────────────────
 
-  const enrichedMessage =
-    intents && Array.isArray(intents) && intents.length > 0
-      ? `[Intenciones del usuario: ${intents.join(', ')}]\n\n${message}`
-      : message
+export async function POST(req: NextRequest) {
+  const { empresa_id, message, session_id, previous_response_id, intents } =
+    await req.json()
+
+  if (!message) return NextResponse.json({ error: 'message requerido' }, { status: 400 })
 
   const db = createAdminClient()
 
-  // Resolve AI agent
+  // ── Resolve AI agent ─────────────────────────────────────────────────────
   let agente: any = null
+
   if (empresa_id) {
     const { data } = await db
       .from('agentes_ia')
@@ -88,28 +117,44 @@ export async function POST(req: NextRequest) {
   }
 
   if (!agente) {
-    const portalAssistantId = process.env.PORTAL_ASSISTANT_ID
-    if (portalAssistantId) {
-      agente = { id: 'portal-global', empresa_id: null, assistant_id: portalAssistantId, activo: true, channel_uuid_callbell: null }
-    } else {
-      const { data } = await db.from('agentes_ia').select('*').eq('activo', true).limit(1).single()
-      agente = data
+    agente = {
+      id: 'portal-global',
+      empresa_id: null,
+      assistant_id: PORTAL_ASSISTANT_ID,
+      activo: true,
+      channel_uuid_callbell: null,
     }
   }
 
-  if (!agente) return NextResponse.json({ error: 'No hay agente IA configurado' }, { status: 404 })
-
-  // Find or create portal session conversacion
+  // ── Session: find or create conversacion ──────────────────────────────────
   let conversacion: any = null
+  let priorMessages: Array<{ rol: string; texto: string; created_at: string }> = []
+
   if (session_id) {
     const { data: session } = await db
       .from('portal_sessions')
       .select('conversacion_id')
       .eq('session_id', session_id)
       .single()
+
     if (session?.conversacion_id) {
-      const { data } = await db.from('conversacion').select('*').eq('id', session.conversacion_id).single()
+      const { data } = await db
+        .from('conversacion')
+        .select('*')
+        .eq('id', session.conversacion_id)
+        .single()
       conversacion = data
+
+      // Load last 10 messages for history if starting fresh thread
+      if (!previous_response_id) {
+        const { data: msgs } = await db
+          .from('mensaje')
+          .select('rol, texto, created_at')
+          .eq('conversacion_id', session.conversacion_id)
+          .order('created_at', { ascending: false })
+          .limit(10)
+        priorMessages = (msgs ?? []).reverse()
+      }
     }
   }
 
@@ -117,12 +162,12 @@ export async function POST(req: NextRequest) {
     const { data: newConv } = await db
       .from('conversacion')
       .insert({
-        whatsapp_ai_id: agente.id === 'portal-global' ? null : agente.id,
+        whatsapp_ai_id: null,
         user_conversacion_id: null,
         activa: true,
         ultimo_mensaje_at: new Date().toISOString(),
         last_response_id: previous_response_id ?? null,
-        metadata: { source: 'portal', session_id, global: !empresa_id },
+        metadata: { source: 'portal', session_id, assistant_id: PORTAL_ASSISTANT_ID },
       })
       .select()
       .single()
@@ -140,19 +185,47 @@ export async function POST(req: NextRequest) {
     conversacion = { ...conversacion, last_response_id: previous_response_id }
   }
 
+  // ── Build enriched message with timestamp + intent context ────────────────
+  const intentList = Array.isArray(intents) ? intents : []
+  const timestampedMessage = buildTimestampedContent(message, intentList)
+
+  // If no prior response chain, prepend history as context
+  const fullContent = priorMessages.length > 0 && !previous_response_id
+    ? priorMessages
+        .map(m => {
+          const ts = new Date(m.created_at).toLocaleString('es-CO', {
+            timeZone: 'America/Bogota', day: '2-digit', month: 'short',
+            hour: '2-digit', minute: '2-digit', hour12: false,
+          })
+          const role = m.rol === 'user' ? 'Usuario' : 'EMA'
+          return `[${ts}] ${role}: ${m.texto}`
+        })
+        .join('\n') + '\n\n' + timestampedMessage
+    : timestampedMessage
+
+  // Save user message to DB
   if (conversacion) {
-    await db.from('mensaje').insert({ conversacion_id: conversacion.id, rol: 'user', texto: enrichedMessage, metadata: {} })
+    await db.from('mensaje').insert({
+      conversacion_id: conversacion.id,
+      rol: 'user',
+      texto: message, // store clean message, not enriched version
+      metadata: { intents: intentList },
+    })
   }
 
+  // ── Call agent ─────────────────────────────────────────────────────────────
   const result = await processMessage({
     conversacion: conversacion ?? {
-      id: 'temp', whatsapp_ai_id: agente.id, user_conversacion_id: null,
-      activa: true, ultimo_mensaje_at: null, last_response_id: previous_response_id ?? null, metadata: {},
+      id: 'temp', whatsapp_ai_id: null, user_conversacion_id: null,
+      activa: true, ultimo_mensaje_at: null,
+      last_response_id: previous_response_id ?? null,
+      metadata: {},
     },
     whatsappAI: agente,
-    userMessage: enrichedMessage,
+    userMessage: fullContent,
   })
 
+  // Save assistant response
   if (conversacion) {
     await db.from('mensaje').insert({
       conversacion_id: conversacion.id,
@@ -162,11 +235,13 @@ export async function POST(req: NextRequest) {
       metadata: {},
     })
     if (session_id) {
-      await db.from('portal_sessions').update({ last_response_id: result.responseId }).eq('session_id', session_id)
+      await db.from('portal_sessions')
+        .update({ last_response_id: result.responseId })
+        .eq('session_id', session_id)
     }
   }
 
-  // Hydrate tool results to AtlasProperty for the portal store
+  // ── Hydrate tool results → AtlasProperty ──────────────────────────────────
   const atlasProperties = hydrateAtlasProperties(result.properties, result.text)
 
   return NextResponse.json({

@@ -5,7 +5,8 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
     type: 'function',
     name: 'buscar_propiedades',
     description:
-      'Busca propiedades en el inventario de la inmobiliaria. Usa esta herramienta cuando el usuario pregunte por inmuebles, apartamentos, casas, oficinas, lotes, fincas, o cualquier propiedad. También úsala cuando pregunte por precio, ubicación, o características como terraza, parqueadero, piscina, etc.',
+      'Busca propiedades en el inventario. Úsala cuando el usuario pregunte por inmuebles, apartamentos, casas, precios, ubicaciones o características. ' +
+      'También úsala cuando el usuario pegue un enlace de Finca Raíz, Metro Cuadrado o Domus — extrae el código automáticamente.',
     parameters: {
       type: 'object',
       properties: {
@@ -21,21 +22,25 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
         ciudad: {
           type: 'string',
-          description: 'Ciudad o zona. Ej: Medellín, El Poblado, Bogotá, Chicó',
+          description: 'Ciudad. Ej: Bogotá, Medellín, Barranquilla, Cali',
+        },
+        barrio: {
+          type: 'string',
+          description: 'Barrio o sector. Ej: Chicó, El Poblado, Laureles, Usaquén',
         },
         precio_min: { type: 'number', description: 'Precio mínimo en COP' },
         precio_max: { type: 'number', description: 'Precio máximo en COP' },
-        habitaciones_min: { type: 'integer', description: 'Habitaciones mínimas' },
-        area_min: { type: 'number', description: 'Área mínima en m2' },
+        habitaciones_min: { type: 'integer', description: 'Mínimo de habitaciones' },
+        area_min: { type: 'number', description: 'Área mínima en m²' },
         caracteristicas: {
           type: 'string',
-          description: 'Búsqueda libre: terraza, piscina, parqueadero, vista, amoblado, etc.',
+          description: 'Búsqueda libre de características o URL de portal (MC/FR/Domus). Ej: terraza, piscina, amoblado, https://www.metrocuadrado.com/...',
         },
         codigo: {
           type: 'string',
-          description: 'Código de propiedad — acepta código interno, código Finca Raíz, o código Metro Cuadrado',
+          description: 'Código de propiedad — interno, Finca Raíz, Metro Cuadrado, Domus, o Código Identificador',
         },
-        limite: { type: 'integer', description: 'Máx resultados. Default 5.' },
+        limite: { type: 'integer', description: 'Máximo de resultados. Default 5, máx 10.' },
       },
       required: [],
     },
@@ -44,7 +49,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
     type: 'function',
     name: 'obtener_detalle_propiedad',
     description:
-      'Obtiene el detalle completo de una propiedad por código. Úsalo cuando el usuario pida más info sobre una propiedad ya mostrada.',
+      'Obtiene el detalle completo de una propiedad por código. Úsalo cuando el usuario pida más información sobre una propiedad ya mostrada.',
     parameters: {
       type: 'object',
       properties: {
@@ -61,10 +66,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
       type: 'object',
       properties: {
         propiedad_codigo: { type: 'string', description: 'Código de la propiedad' },
-        fecha_hora: {
-          type: 'string',
-          description: "Fecha y hora en texto libre. Ej: 'mañana a las 3pm'",
-        },
+        fecha_hora: { type: 'string', description: "Fecha y hora. Ej: 'mañana a las 3pm'" },
         nombre_contacto: { type: 'string', description: 'Nombre del contacto' },
         telefono: { type: 'string', description: 'Teléfono del contacto' },
       },
