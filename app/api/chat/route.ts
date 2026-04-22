@@ -39,21 +39,17 @@ function buildTimestampedContent(message: string, intents: string[]): string {
 function extractCodesFromText(text: string): string[] {
   const codes = new Set<string>()
 
-  // Inline MC code: "2671-M6188915"
-  for (const m of text.matchAll(/\b(\d{4,6}-M\d+)\b/gi)) codes.add(m[1])
+  function scan(re: RegExp) {
+    let m: RegExpExecArray | null
+    re.lastIndex = 0
+    while ((m = re.exec(text)) !== null) codes.add(m[1])
+  }
 
-  // MC URL path: metrocuadrado.com/.../12345678
-  for (const m of text.matchAll(/metrocuadrado\.com\/[^\s"')>]*\/(\d{5,10})/gi)) codes.add(m[1])
-
-  // FR URL path: fincaraiz.com.co/.../192797879
-  for (const m of text.matchAll(/fincaraiz\.com\.co\/[^\s"')>]*\/(\d{6,12})/gi)) codes.add(m[1])
-
-  // User's Bubble pattern: number that appears right after a URL separated by a space
-  // e.g. "https://www.site.com/path 123456"
-  for (const m of text.matchAll(/https?:\/\/\S+[ \t]+(\d{4,12})(?=[\s?#]|$)/gi)) codes.add(m[1])
-
-  // Explicit codes: "Código: 12345" / "Ref 12345" / "#12345"
-  for (const m of text.matchAll(/(?:código|cod\.?|ref\.?|#)\s*:?\s*(\d{4,12})/gi)) codes.add(m[1])
+  scan(/\b(\d{4,6}-M\d+)\b/gi)                                          // MC inline code
+  scan(/metrocuadrado\.com\/[^\s"')>]*\/(\d{5,10})/gi)                  // MC URL
+  scan(/fincaraiz\.com\.co\/[^\s"')>]*\/(\d{6,12})/gi)                  // FR URL
+  scan(/https?:\/\/\S+[ \t]+(\d{4,12})(?=[\s?#]|$)/gi)                  // Bubble pattern
+  scan(/(?:c[oó]digo|cod\.|ref\.?|#)\s*:?\s*(\d{4,12})/gi)              // explicit mention
 
   return Array.from(codes)
 }

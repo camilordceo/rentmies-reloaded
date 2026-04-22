@@ -34,10 +34,10 @@ async function fetchPortalData() {
 
     if (msgErr) console.error('[portal-logs] mensaje query error:', msgErr.message)
 
-    const msgsByConv: Record<string, PortalMensaje[]> = {}
+    const msgsByConv: Record<string, PortalConversacion['mensajes']> = {}
     for (const m of msgs ?? []) {
       if (!msgsByConv[m.conversacion_id]) msgsByConv[m.conversacion_id] = []
-      msgsByConv[m.conversacion_id].push(m as PortalMensaje)
+      msgsByConv[m.conversacion_id].push(m as PortalConversacion['mensajes'][0])
     }
 
     const conversations: PortalConversacion[] = convs.map((c) => ({
