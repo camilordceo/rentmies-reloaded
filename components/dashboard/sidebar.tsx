@@ -17,7 +17,8 @@ const adminNav = [
   { href: '/admin/agents', label: 'AI Agents', icon: Bot },
   { href: '/admin/wa-conversations', label: 'WhatsApp Chats', icon: Webhook },
   { href: '/admin/testing', label: 'Testing', icon: FlaskConical },
-  { href: '/admin/logs', label: 'Logs', icon: ScrollText },
+  { href: '/admin/portal-logs', label: 'Portal Logs', icon: Sparkles },
+  { href: '/admin/logs', label: 'Logs Sistema', icon: ScrollText },
 ]
 
 const configSubItems = [

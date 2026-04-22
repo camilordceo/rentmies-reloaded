@@ -64,8 +64,9 @@ export default async function AdminPage() {
       {/* Quick links */}
       <div>
         <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface/40 mb-4">ACCESOS RÁPIDOS</p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
+            { href: '/admin/portal-logs', label: 'Logs del portal B2C', desc: 'Conversaciones de EMA — afina el asistente con datos reales', accent: 'text-authority-green', bg: 'bg-authority-green/10' },
             { href: '/admin/logs', label: 'Logs del sistema', desc: 'Monitoreo en tiempo real de eventos y errores', accent: 'text-amber-600', bg: 'bg-amber-50' },
             { href: '/admin/usuarios', label: 'Gestionar usuarios', desc: 'Roles, permisos y cuentas activas', accent: 'text-blue-600', bg: 'bg-blue-50' },
             { href: '/admin/empresas', label: 'Gestionar empresas', desc: 'Planes, configuraciones y estados', accent: 'text-purple-600', bg: 'bg-purple-50' },

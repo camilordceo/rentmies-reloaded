@@ -25,7 +25,7 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- ─── 2. Rentmies Portal empresa ─────────────────────────────────────────────
 
-INSERT INTO public.empresas (id, nombre, plan, activo, metadata)
+INSERT INTO public.empresas (id, nombre, plan, activa, configuracion)
 VALUES (
   '00000000-0000-0000-0000-000000000002',
   'Rentmies Portal',
@@ -33,7 +33,7 @@ VALUES (
   true,
   '{"portal": true, "assistant_id": "asst_IbHsOSuSAByiX59OujkQmUbw"}'
 )
-ON CONFLICT (id) DO UPDATE SET activo = true, metadata = excluded.metadata;
+ON CONFLICT (id) DO UPDATE SET activa = true, configuracion = excluded.configuracion;
 
 -- ─── 3. Updated buscar_propiedades_hibrido ──────────────────────────────────
 -- Changes: includes new code columns, optional empresa_id (NULL = global),

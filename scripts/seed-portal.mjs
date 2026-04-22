@@ -102,8 +102,8 @@ async function main() {
 
   // Ensure portal empresa exists
   const { error: empErr } = await db.from('empresas').upsert(
-    { id: PORTAL_EMPRESA_ID, nombre: 'Rentmies Portal', plan: 'pro', activo: true,
-      metadata: { portal: true, assistant_id: 'asst_IbHsOSuSAByiX59OujkQmUbw' } },
+    { id: PORTAL_EMPRESA_ID, nombre: 'Rentmies Portal', plan: 'pro', activa: true,
+      configuracion: { portal: true, assistant_id: 'asst_IbHsOSuSAByiX59OujkQmUbw' } },
     { onConflict: 'id' }
   )
   if (empErr) { console.error('Empresa upsert failed:', empErr.message); process.exit(1) }
