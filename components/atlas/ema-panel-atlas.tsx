@@ -163,11 +163,14 @@ export function EmaPanelAtlas() {
       if (Array.isArray(data.properties) && data.properties.length > 0) {
         setProperties(data.properties)
         setLastPropertyCount(data.properties.length)
-        // Navigate to Chapter 2 (curation) to show results
         setChapter(1 as AtlasChapter)
-        // Scroll the rail
-        const rail = document.querySelector('.atlas-rail') as HTMLElement | null
-        if (rail) rail.scrollTo({ left: window.innerWidth, behavior: 'smooth' })
+        // Switch panel to Resumen so user sees the ranked property list
+        setEmaMode('resumen')
+        // Defer scroll one frame so the DOM state is settled
+        requestAnimationFrame(() => {
+          const rail = document.querySelector('.atlas-rail') as HTMLElement | null
+          if (rail) rail.scrollTo({ left: window.innerWidth, behavior: 'smooth' })
+        })
       }
 
       // Speak the reply via ElevenLabs

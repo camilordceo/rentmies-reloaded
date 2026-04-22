@@ -5,67 +5,83 @@ import { PortalLogsClient } from './portal-logs-client'
 import type { PortalConversacion } from './portal-logs-client'
 
 async function fetchPortalData() {
-  const db = createAdminClient()
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
+  try {
+    const db = createAdminClient()
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
 
-  // Fetch recent portal conversations (last 200)
-  const { data: convs } = await db
-    .from('conversacion')
-    .select('id, created_at, ultimo_mensaje_at, metadata')
-    .contains('metadata', { source: 'portal' })
-    .order('created_at', { ascending: false })
-    .limit(200)
+    const { data: convs, error } = await db
+      .from('conversacion')
+      .select('id, created_at, ultimo_mensaje_at, metadata')
+      .filter('metadata->>source', 'eq', 'portal')
+      .order('created_at', { ascending: false })
+      .limit(200)
 
-  if (!convs?.length) {
-    return { conversations: [], stats: { totalSessions: 0, totalMessages: 0, todaySessions: 0, topIntents: [] } }
+    if (error) {
+      console.error('[portal-logs] conversacion query error:', error.message)
+      return empty()
+    }
+
+    if (!convs?.length) return empty()
+
+    const convIds = convs.map((c) => c.id)
+
+    const { data: msgs, error: msgErr } = await db
+      .from('mensaje')
+      .select('id, conversacion_id, rol, texto, created_at, metadata')
+      .in('conversacion_id', convIds)
+      .order('created_at', { ascending: true })
+
+    if (msgErr) console.error('[portal-logs] mensaje query error:', msgErr.message)
+
+    const msgsByConv: Record<string, PortalMensaje[]> = {}
+    for (const m of msgs ?? []) {
+      if (!msgsByConv[m.conversacion_id]) msgsByConv[m.conversacion_id] = []
+      msgsByConv[m.conversacion_id].push(m as PortalMensaje)
+    }
+
+    const conversations: PortalConversacion[] = convs.map((c) => ({
+      id: c.id,
+      created_at: c.created_at,
+      ultimo_mensaje_at: c.ultimo_mensaje_at,
+      metadata: c.metadata ?? {},
+      mensajes: msgsByConv[c.id] ?? [],
+    }))
+
+    const todaySessions = convs.filter(
+      (c) => c.created_at >= todayStart.toISOString()
+    ).length
+    const totalMessages = (msgs ?? []).length
+
+    const intentCount: Record<string, number> = {}
+    for (const m of msgs ?? []) {
+      for (const i of (m.metadata?.intents ?? []) as string[]) {
+        intentCount[i] = (intentCount[i] ?? 0) + 1
+      }
+    }
+    const topIntents = Object.entries(intentCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([intent, count]) => ({ intent, count }))
+
+    return {
+      conversations,
+      stats: { totalSessions: convs.length, totalMessages, todaySessions, topIntents },
+    }
+  } catch (err) {
+    console.error('[portal-logs] unexpected error:', err)
+    return empty()
   }
+}
 
-  const convIds = convs.map(c => c.id)
-
-  // Fetch all messages for these conversations
-  const { data: msgs } = await db
-    .from('mensaje')
-    .select('id, conversacion_id, rol, texto, created_at, metadata')
-    .in('conversacion_id', convIds)
-    .order('created_at', { ascending: true })
-
-  const msgsByConv: Record<string, any[]> = {}
-  for (const m of msgs ?? []) {
-    if (!msgsByConv[m.conversacion_id]) msgsByConv[m.conversacion_id] = []
-    msgsByConv[m.conversacion_id].push(m)
-  }
-
-  const conversations: PortalConversacion[] = convs.map(c => ({
-    id: c.id,
-    created_at: c.created_at,
-    ultimo_mensaje_at: c.ultimo_mensaje_at,
-    metadata: c.metadata ?? {},
-    mensajes: msgsByConv[c.id] ?? [],
-  }))
-
-  // Stats
-  const todaySessions = convs.filter(c => c.created_at >= todayStart.toISOString()).length
-  const totalMessages = (msgs ?? []).length
-
-  // Count intents across all messages
-  const intentCount: Record<string, number> = {}
-  for (const m of msgs ?? []) {
-    const intents: string[] = m.metadata?.intents ?? []
-    for (const i of intents) intentCount[i] = (intentCount[i] ?? 0) + 1
-  }
-  const topIntents = Object.entries(intentCount)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
-    .map(([intent, count]) => ({ intent, count }))
-
+function empty() {
   return {
-    conversations,
+    conversations: [] as PortalConversacion[],
     stats: {
-      totalSessions: convs.length,
-      totalMessages,
-      todaySessions,
-      topIntents,
+      totalSessions: 0,
+      totalMessages: 0,
+      todaySessions: 0,
+      topIntents: [] as Array<{ intent: string; count: number }>,
     },
   }
 }
@@ -76,7 +92,9 @@ export default async function PortalLogsPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-authority-green mb-1">PORTAL B2C</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-authority-green mb-1">
+          PORTAL B2C
+        </p>
         <h1 className="text-3xl font-bold tracking-tight text-on-surface">Logs del Portal</h1>
         <p className="text-on-surface/50 text-sm mt-1">
           Conversaciones de EMA en el atlas — úsalas para afinar el asistente

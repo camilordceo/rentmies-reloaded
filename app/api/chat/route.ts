@@ -7,9 +7,10 @@ import type { AtlasProperty } from '@/store/atlas-store'
 
 export const maxDuration = 30
 
-// Portal defaults — override via env
 const PORTAL_ASSISTANT_ID =
   process.env.PORTAL_ASSISTANT_ID || 'asst_IbHsOSuSAByiX59OujkQmUbw'
+
+const PORTAL_EMPRESA_ID = '00000000-0000-0000-0000-000000000002'
 
 // ── Timestamp helpers ──────────────────────────────────────────────────────
 
@@ -26,17 +27,38 @@ function buildTimestampedContent(message: string, intents: string[]): string {
   const intentLine = intents.length > 0
     ? `\nIntenciones activas: ${intents.join(', ')}`
     : ''
-
-  // Detect and annotate portal URLs in the message
   const portalCode = extractPortalCode(message)
-  const codeLine = portalCode
-    ? `\nCódigo portal detectado: ${portalCode}`
-    : ''
-
+  const codeLine = portalCode ? `\nCódigo portal detectado: ${portalCode}` : ''
   return `[${ts} COT] ${message}${intentLine}${codeLine}`
 }
 
-// ── Property hydration ─────────────────────────────────────────────────────
+// ── Code extraction from AI text ───────────────────────────────────────────
+// Finds MC/FR/Domus codes mentioned in the assistant's reply so we can
+// fetch the actual property records and push them to the catalog.
+
+function extractCodesFromText(text: string): string[] {
+  const codes = new Set<string>()
+
+  // Inline MC code: "2671-M6188915"
+  for (const m of text.matchAll(/\b(\d{4,6}-M\d+)\b/gi)) codes.add(m[1])
+
+  // MC URL path: metrocuadrado.com/.../12345678
+  for (const m of text.matchAll(/metrocuadrado\.com\/[^\s"')>]*\/(\d{5,10})/gi)) codes.add(m[1])
+
+  // FR URL path: fincaraiz.com.co/.../192797879
+  for (const m of text.matchAll(/fincaraiz\.com\.co\/[^\s"')>]*\/(\d{6,12})/gi)) codes.add(m[1])
+
+  // User's Bubble pattern: number that appears right after a URL separated by a space
+  // e.g. "https://www.site.com/path 123456"
+  for (const m of text.matchAll(/https?:\/\/\S+[ \t]+(\d{4,12})(?=[\s?#]|$)/gi)) codes.add(m[1])
+
+  // Explicit codes: "Código: 12345" / "Ref 12345" / "#12345"
+  for (const m of text.matchAll(/(?:código|cod\.?|ref\.?|#)\s*:?\s*(\d{4,12})/gi)) codes.add(m[1])
+
+  return Array.from(codes)
+}
+
+// ── Property hydration (tool results) ─────────────────────────────────────
 
 function hydrateAtlasProperties(toolProps: any[], aiText: string): AtlasProperty[] {
   return toolProps.map((p, idx) => {
@@ -57,8 +79,6 @@ function hydrateAtlasProperties(toolProps: any[], aiText: string): AtlasProperty
       habitaciones: p.habitaciones,
     })
     const match_score = Math.max(62, 97 - idx * 5)
-
-    // Pull first sentence mentioning the property as an insight
     const sentences = aiText.split(/(?<=[.!?])\s+/)
     const identifier = p.codigo ?? p.ubicacion ?? ''
     const agent_insight = identifier
@@ -90,6 +110,48 @@ function hydrateAtlasProperties(toolProps: any[], aiText: string): AtlasProperty
       agent_insight,
     } satisfies AtlasProperty
   })
+}
+
+// ── Property hydration (direct DB row fallback) ────────────────────────────
+
+function mapRowToAtlas(row: any, aiText: string, idx: number): AtlasProperty {
+  const tags = deriveTags(row)
+  const mood = deriveMood(row)
+  const jitter = row.id
+    ? (row.id.charCodeAt(0) + row.id.charCodeAt(row.id.length - 1)) % 15
+    : 5
+  const match_score = Math.min(99, Math.max(82, 97 - idx * 4 + jitter))
+
+  const sentences = aiText.split(/(?<=[.!?])\s+/)
+  const identifier = row.codigo ?? ''
+  const agent_insight = identifier
+    ? sentences.find(s => s.toLowerCase().includes(identifier.toLowerCase()))?.trim() ?? null
+    : null
+
+  return {
+    id: row.id,
+    codigo: row.codigo,
+    ubicacion: row.ubicacion ?? '',
+    ciudad: row.ciudad ?? null,
+    tipo_inmueble: row.tipo_inmueble ?? null,
+    tipo_negocio: row.tipo_negocio ?? null,
+    precio: row.precio,
+    area_m2: row.area_m2 ?? null,
+    habitaciones: row.habitaciones ?? null,
+    banos: row.banos ?? null,
+    parqueaderos: row.parqueaderos ?? null,
+    estrato: row.estrato ?? null,
+    imagenes: row.imagenes ?? [],
+    descripcion: row.descripcion ?? null,
+    cashback_amount: row.cashback_amount ?? null,
+    cashback_rate: row.cashback_rate ?? null,
+    empresa_id: row.empresa_id ?? null,
+    caracteristicas: row.caracteristicas ?? {},
+    tags,
+    mood,
+    match_score,
+    agent_insight,
+  } satisfies AtlasProperty
 }
 
 // ── Route handler ──────────────────────────────────────────────────────────
@@ -145,7 +207,6 @@ export async function POST(req: NextRequest) {
         .single()
       conversacion = data
 
-      // Load last 10 messages for history if starting fresh thread
       if (!previous_response_id) {
         const { data: msgs } = await db
           .from('mensaje')
@@ -173,9 +234,16 @@ export async function POST(req: NextRequest) {
       .single()
     conversacion = newConv
 
+    // portal_sessions.empresa_id is NOT NULL — fall back to portal empresa
     if (session_id && conversacion) {
       await db.from('portal_sessions').upsert(
-        { session_id, empresa_id: empresa_id ?? null, conversacion_id: conversacion.id, last_response_id: null, metadata: {} },
+        {
+          session_id,
+          empresa_id: empresa_id ?? PORTAL_EMPRESA_ID,
+          conversacion_id: conversacion.id,
+          last_response_id: null,
+          metadata: {},
+        },
         { onConflict: 'session_id' }
       )
     }
@@ -185,11 +253,10 @@ export async function POST(req: NextRequest) {
     conversacion = { ...conversacion, last_response_id: previous_response_id }
   }
 
-  // ── Build enriched message with timestamp + intent context ────────────────
+  // ── Build enriched message ────────────────────────────────────────────────
   const intentList = Array.isArray(intents) ? intents : []
   const timestampedMessage = buildTimestampedContent(message, intentList)
 
-  // If no prior response chain, prepend history as context
   const fullContent = priorMessages.length > 0 && !previous_response_id
     ? priorMessages
         .map(m => {
@@ -203,12 +270,11 @@ export async function POST(req: NextRequest) {
         .join('\n') + '\n\n' + timestampedMessage
     : timestampedMessage
 
-  // Save user message to DB
   if (conversacion) {
     await db.from('mensaje').insert({
       conversacion_id: conversacion.id,
       rol: 'user',
-      texto: message, // store clean message, not enriched version
+      texto: message,
       metadata: { intents: intentList },
     })
   }
@@ -225,7 +291,6 @@ export async function POST(req: NextRequest) {
     userMessage: fullContent,
   })
 
-  // Save assistant response
   if (conversacion) {
     await db.from('mensaje').insert({
       conversacion_id: conversacion.id,
@@ -242,7 +307,39 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Hydrate tool results → AtlasProperty ──────────────────────────────────
-  const atlasProperties = hydrateAtlasProperties(result.properties, result.text)
+  let atlasProperties = hydrateAtlasProperties(result.properties, result.text)
+
+  // ── Fallback: extract codes from AI text and fetch directly from DB ────────
+  // Handles the case where the AI mentions properties in text without the tool
+  // returning results (e.g. DB not yet seeded, or AI describes a specific unit).
+  if (atlasProperties.length === 0 && result.text) {
+    const codes = extractCodesFromText(result.text)
+
+    if (codes.length > 0) {
+      const orClauses = codes.flatMap(c => [
+        `codigo.eq.${c}`,
+        `codigo_finca_raiz.eq.${c}`,
+        `codigo_metro_cuadrado.eq.${c}`,
+        `codigo_domus.eq.${c}`,
+        `codigo_identificador.eq.${c}`,
+      ]).join(',')
+
+      const { data: fallback } = await db
+        .from('propiedades')
+        .select(
+          'id, codigo, ubicacion, ciudad, tipo_inmueble, tipo_negocio, precio, ' +
+          'area_m2, habitaciones, banos, parqueaderos, estrato, imagenes, descripcion, ' +
+          'cashback_amount, cashback_rate, empresa_id, caracteristicas'
+        )
+        .or(orClauses)
+        .eq('estado', 'activo')
+        .limit(5)
+
+      if (fallback?.length) {
+        atlasProperties = fallback.map((row, idx) => mapRowToAtlas(row, result.text, idx))
+      }
+    }
+  }
 
   return NextResponse.json({
     text: result.text,
