@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { useAtlasStore, fmtCOP } from '@/store/atlas-store'
 import type { AtlasProperty } from '@/store/atlas-store'
 
@@ -288,11 +289,13 @@ function OfferSheet({ prop, onClose }: { prop: AtlasProperty; onClose: () => voi
 }
 
 export function PropDrawer() {
-  const { drawerProperty, closeDrawer, openEmaPanel } = useAtlasStore((s) => ({
-    drawerProperty: s.drawerProperty,
-    closeDrawer: s.closeDrawer,
-    openEmaPanel: s.openEmaPanel,
-  }))
+  const { drawerProperty, closeDrawer, openEmaPanel } = useAtlasStore(
+    useShallow((s) => ({
+      drawerProperty: s.drawerProperty,
+      closeDrawer: s.closeDrawer,
+      openEmaPanel: s.openEmaPanel,
+    }))
+  )
 
   const [galleryIdx, setGalleryIdx] = useState(0)
   const [offerOpen, setOfferOpen] = useState(false)

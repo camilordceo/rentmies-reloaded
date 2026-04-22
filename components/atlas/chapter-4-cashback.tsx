@@ -1,4 +1,5 @@
 'use client'
+import { useShallow } from 'zustand/react/shallow'
 import { useAtlasStore, fmtCOP } from '@/store/atlas-store'
 
 const TICKER_ITEMS = [
@@ -11,13 +12,15 @@ const TICKER_ITEMS = [
 ]
 
 export function Chapter4Cashback() {
-  const { calcPrice, calcType, setCalcPrice, setCalcType, openEmaPanel } = useAtlasStore((s) => ({
-    calcPrice: s.calcPrice,
-    calcType: s.calcType,
-    setCalcPrice: s.setCalcPrice,
-    setCalcType: s.setCalcType,
-    openEmaPanel: s.openEmaPanel,
-  }))
+  const { calcPrice, calcType, setCalcPrice, setCalcType, openEmaPanel } = useAtlasStore(
+    useShallow((s) => ({
+      calcPrice: s.calcPrice,
+      calcType: s.calcType,
+      setCalcPrice: s.setCalcPrice,
+      setCalcType: s.setCalcType,
+      openEmaPanel: s.openEmaPanel,
+    }))
+  )
 
   const rate = calcType === 'Arriendo' ? 0.10 : 0.01
   const cashback = Math.round(calcPrice * rate)

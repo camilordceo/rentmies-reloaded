@@ -105,7 +105,7 @@ export const useAtlasStore = create<AtlasState>((set, get) => ({
   setEmaListening: (v) => set({ emaListening: v }),
   emaMode: 'resumen',
   setEmaMode: (m) => set({ emaMode: m }),
-  emaPanelOpen: true,
+  emaPanelOpen: false,
   toggleEmaPanel: () => set((s) => ({ emaPanelOpen: !s.emaPanelOpen })),
   openEmaPanel: () => set({ emaPanelOpen: true }),
 
@@ -163,11 +163,13 @@ export function deriveTags(p: AtlasProperty): string[] {
 }
 
 export function computeMatchScore(p: AtlasProperty, intents: string[]): number {
-  if (intents.length === 0) return 72 + Math.floor(Math.random() * 20)
+  // Deterministic jitter from property id so scores don't change on every render
+  const jitter = p.id ? (p.id.charCodeAt(0) + p.id.charCodeAt(p.id.length - 1)) % 20 : 10
+  if (intents.length === 0) return 70 + jitter
   const text = [p.descripcion, p.ubicacion, p.ciudad, ...p.tags, p.mood]
     .join(' ')
     .toLowerCase()
   const hits = intents.filter((it) => text.includes(it.toLowerCase())).length
   const base = Math.round((hits / intents.length) * 35)
-  return Math.min(99, 60 + base + Math.floor(Math.random() * 8))
+  return Math.min(99, 60 + base + (jitter % 8))
 }

@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import Image from 'next/image'
+import { useShallow } from 'zustand/react/shallow'
 import { useAtlasStore, fmtCOP, computeMatchScore } from '@/store/atlas-store'
 import type { AtlasProperty } from '@/store/atlas-store'
 import { CashbackCoin } from './cashback-coin'
@@ -16,12 +16,14 @@ function fmtPrice(p: AtlasProperty): string {
 }
 
 export function Chapter2Curation() {
-  const { properties, activeIntents, openDrawer, mouse } = useAtlasStore((s) => ({
-    properties: s.properties,
-    activeIntents: s.activeIntents,
-    openDrawer: s.openDrawer,
-    mouse: s.mouse,
-  }))
+  const { properties, activeIntents, openDrawer, mouse } = useAtlasStore(
+    useShallow((s) => ({
+      properties: s.properties,
+      activeIntents: s.activeIntents,
+      openDrawer: s.openDrawer,
+      mouse: s.mouse,
+    }))
+  )
 
   const [focusIdx, setFocusIdx] = useState(0)
 

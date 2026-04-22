@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { useAtlasStore, fmtCOP } from '@/store/atlas-store'
 
 const ROOMS = [
@@ -11,12 +12,14 @@ const ROOMS = [
 ]
 
 export function Chapter3Tour() {
-  const { properties, mouse, openDrawer, openEmaPanel } = useAtlasStore((s) => ({
-    properties: s.properties,
-    mouse: s.mouse,
-    openDrawer: s.openDrawer,
-    openEmaPanel: s.openEmaPanel,
-  }))
+  const { properties, mouse, openDrawer, openEmaPanel } = useAtlasStore(
+    useShallow((s) => ({
+      properties: s.properties,
+      mouse: s.mouse,
+      openDrawer: s.openDrawer,
+      openEmaPanel: s.openEmaPanel,
+    }))
+  )
 
   const [activeRoom, setActiveRoom] = useState(0)
 

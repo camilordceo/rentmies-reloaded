@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { useAtlasStore } from '@/store/atlas-store'
 import type { AtlasProperty, AtlasChapter } from '@/store/atlas-store'
 import { AtlasTopNav } from '@/components/atlas/atlas-top-nav'
@@ -13,12 +14,14 @@ import { PropDrawer } from '@/components/atlas/prop-drawer'
 
 export function AtlasClient({ initialProperties }: { initialProperties: AtlasProperty[] }) {
   const railRef = useRef<HTMLDivElement>(null)
-  const { setProperties, setMouse, setChapter, activeChapter } = useAtlasStore((s) => ({
-    setProperties: s.setProperties,
-    setMouse: s.setMouse,
-    setChapter: s.setChapter,
-    activeChapter: s.activeChapter,
-  }))
+  const { setProperties, setMouse, setChapter, activeChapter } = useAtlasStore(
+    useShallow((s) => ({
+      setProperties: s.setProperties,
+      setMouse: s.setMouse,
+      setChapter: s.setChapter,
+      activeChapter: s.activeChapter,
+    }))
+  )
 
   // Seed store with server-fetched properties
   useEffect(() => {

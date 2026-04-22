@@ -1,5 +1,6 @@
 'use client'
 import { useState, useRef } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { useAtlasStore, fmtCOP, computeMatchScore } from '@/store/atlas-store'
 import { EmaSphere } from './ema-sphere'
 import { Waveform } from './waveform'
@@ -47,25 +48,27 @@ export function EmaPanelAtlas() {
     responseId,
     setResponseId,
     openDrawer,
-  } = useAtlasStore((s) => ({
-    emaPanelOpen: s.emaPanelOpen,
-    toggleEmaPanel: s.toggleEmaPanel,
-    emaListening: s.emaListening,
-    setEmaListening: s.setEmaListening,
-    emaMode: s.emaMode,
-    setEmaMode: s.setEmaMode,
-    activeChapter: s.activeChapter,
-    activeIntents: s.activeIntents,
-    properties: s.properties,
-    emaMessages: s.emaMessages,
-    addEmaMessage: s.addEmaMessage,
-    emaProcessing: s.emaProcessing,
-    setEmaProcessing: s.setEmaProcessing,
-    sessionId: s.sessionId,
-    responseId: s.responseId,
-    setResponseId: s.setResponseId,
-    openDrawer: s.openDrawer,
-  }))
+  } = useAtlasStore(
+    useShallow((s) => ({
+      emaPanelOpen: s.emaPanelOpen,
+      toggleEmaPanel: s.toggleEmaPanel,
+      emaListening: s.emaListening,
+      setEmaListening: s.setEmaListening,
+      emaMode: s.emaMode,
+      setEmaMode: s.setEmaMode,
+      activeChapter: s.activeChapter,
+      activeIntents: s.activeIntents,
+      properties: s.properties,
+      emaMessages: s.emaMessages,
+      addEmaMessage: s.addEmaMessage,
+      emaProcessing: s.emaProcessing,
+      setEmaProcessing: s.setEmaProcessing,
+      sessionId: s.sessionId,
+      responseId: s.responseId,
+      setResponseId: s.setResponseId,
+      openDrawer: s.openDrawer,
+    }))
+  )
 
   const [input, setInput] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
