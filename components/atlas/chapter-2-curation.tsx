@@ -30,9 +30,20 @@ export function Chapter2Curation() {
 
   const [focusIdx, setFocusIdx] = useState(0)
 
+  // Spotlight properties (the ones EMA explicitly returned in the latest reply)
+  // keep their authoritative match_score from the API. Catalog (non-spotlight)
+  // properties get re-scored against the user's active intents so the rest of
+  // the rail still feels alive when intents change.
   const sorted = [...properties]
-    .map((p) => ({ ...p, match_score: computeMatchScore(p, activeIntents) }))
-    .sort((a, b) => b.match_score - a.match_score)
+    .map((p) =>
+      p.spotlight
+        ? { ...p }
+        : { ...p, match_score: computeMatchScore(p, activeIntents) }
+    )
+    .sort((a, b) => {
+      if (!!a.spotlight !== !!b.spotlight) return a.spotlight ? -1 : 1
+      return b.match_score - a.match_score
+    })
     .slice(0, 10)
 
   const focus = sorted[focusIdx] ?? null
@@ -329,6 +340,28 @@ export function Chapter2Curation() {
             }}
           >
             <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+              {focus.spotlight && (
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    padding: '4px 10px',
+                    borderRadius: 999,
+                    background: 'rgba(64,217,157,0.92)',
+                    color: '#004d35',
+                    fontSize: 9,
+                    fontWeight: 800,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    width: 'fit-content',
+                    boxShadow: '0 0 18px rgba(64,217,157,0.5)',
+                    animation: 'breathe 2.4s infinite',
+                  }}
+                >
+                  ✦ EMA lo recomendó
+                </span>
+              )}
               <span className="atlas-chip-glass">
                 {focus.tipo_negocio === 'Arriendo' ? 'En arriendo' : 'En venta'}
               </span>

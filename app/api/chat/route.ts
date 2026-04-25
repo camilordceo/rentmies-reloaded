@@ -288,13 +288,91 @@ export async function POST(req: NextRequest) {
     userMessage: fullContent,
   })
 
+  // ── Hydrate tool results → AtlasProperty ──────────────────────────────────
+  let atlasProperties = hydrateAtlasProperties(result.properties, result.text)
+  const toolPropCount = atlasProperties.length
+
+  // ── Fallback: extract codes from AI text and fetch directly from DB ────────
+  const extractedCodes = result.text ? extractCodesFromText(result.text) : []
+  let fallbackPropCount = 0
+  let codesQueried: string[] = []
+
+  if (atlasProperties.length === 0 && extractedCodes.length > 0) {
+    codesQueried = extractedCodes
+    const orClauses = extractedCodes.flatMap((c) => [
+      `codigo.eq.${c}`,
+      `codigo_finca_raiz.eq.${c}`,
+      `codigo_metro_cuadrado.eq.${c}`,
+      `codigo_domus.eq.${c}`,
+      `codigo_identificador.eq.${c}`,
+    ]).join(',')
+
+    const { data: fallback } = await db
+      .from('propiedades')
+      .select(
+        'id, codigo, ubicacion, ciudad, tipo_inmueble, tipo_negocio, precio, ' +
+        'area_m2, habitaciones, banos, parqueaderos, estrato, imagenes, descripcion, ' +
+        'cashback_amount, cashback_rate, empresa_id, caracteristicas'
+      )
+      .or(orClauses)
+      .eq('estado', 'activo')
+      .limit(5)
+
+    if (fallback?.length) {
+      atlasProperties = fallback.map((row, idx) => mapRowToAtlas(row, result.text, idx))
+      fallbackPropCount = fallback.length
+    }
+  }
+
+  // ── Inventory health probe — only fire when we returned nothing, so the user
+  // can disambiguate "AI didn't find anything" vs "inventario vacío".
+  let inventoryTotal: number | null = null
+  if (atlasProperties.length === 0) {
+    const { count } = await db
+      .from('propiedades')
+      .select('id', { count: 'exact', head: true })
+      .eq('estado', 'activo')
+    inventoryTotal = count ?? 0
+  }
+
+  // Mark every property the API is sending as a spotlight — Chapter 2 will
+  // pin these as the focus so the user sees what EMA recommended.
+  atlasProperties = atlasProperties.map((p) => ({ ...p, spotlight: true }))
+
+  // Search filters from the latest buscar_propiedades tool call (for chips)
+  const lastSearch = [...result.toolCalls]
+    .reverse()
+    .find((t) => t.name === 'buscar_propiedades')
+  const search_filters = lastSearch?.args ?? null
+
+  // Frontend reference chips (clickable codes inside the AI bubble)
+  const references = parseReferencesFromText(result.text)
+
+  // ── Diagnostic payload ────────────────────────────────────────────────────
+  const usedPath: 'tool' | 'fallback' | 'none' =
+    toolPropCount > 0 ? 'tool' : fallbackPropCount > 0 ? 'fallback' : 'none'
+
+  const debug = {
+    used_path: usedPath,
+    extracted_codes: extractedCodes,
+    codes_queried: codesQueried,
+    tool_results: toolPropCount,
+    fallback_results: fallbackPropCount,
+    inventory_total: inventoryTotal,
+    search_filters,
+    tool_calls: result.toolCalls.map((t) => t.name),
+    assistant_id: agente.assistant_id,
+    empresa_id: empresa_id ?? null,
+  }
+
+  // ── Persist assistant message with debug attached ────────────────────────
   if (conversacion) {
     await db.from('mensaje').insert({
       conversacion_id: conversacion.id,
       rol: 'assistant',
       texto: result.text,
       responses_api_correlation_id: result.responseId,
-      metadata: {},
+      metadata: { debug, search_filters },
     })
     if (session_id) {
       await db.from('portal_sessions')
@@ -303,55 +381,12 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // ── Hydrate tool results → AtlasProperty ──────────────────────────────────
-  let atlasProperties = hydrateAtlasProperties(result.properties, result.text)
-
-  // ── Fallback: extract codes from AI text and fetch directly from DB ────────
-  // Handles the case where the AI mentions properties in text without the tool
-  // returning results (e.g. DB not yet seeded, or AI describes a specific unit).
-  if (atlasProperties.length === 0 && result.text) {
-    const codes = extractCodesFromText(result.text)
-
-    if (codes.length > 0) {
-      const orClauses = codes.flatMap(c => [
-        `codigo.eq.${c}`,
-        `codigo_finca_raiz.eq.${c}`,
-        `codigo_metro_cuadrado.eq.${c}`,
-        `codigo_domus.eq.${c}`,
-        `codigo_identificador.eq.${c}`,
-      ]).join(',')
-
-      const { data: fallback } = await db
-        .from('propiedades')
-        .select(
-          'id, codigo, ubicacion, ciudad, tipo_inmueble, tipo_negocio, precio, ' +
-          'area_m2, habitaciones, banos, parqueaderos, estrato, imagenes, descripcion, ' +
-          'cashback_amount, cashback_rate, empresa_id, caracteristicas'
-        )
-        .or(orClauses)
-        .eq('estado', 'activo')
-        .limit(5)
-
-      if (fallback?.length) {
-        atlasProperties = fallback.map((row, idx) => mapRowToAtlas(row, result.text, idx))
-      }
-    }
-  }
-
-  // Parse references for the frontend so it can render clickable chips
-  const references = parseReferencesFromText(result.text)
-
-  // Pull the most recent buscar_propiedades tool args for filter chips
-  const lastSearch = [...result.toolCalls]
-    .reverse()
-    .find((t) => t.name === 'buscar_propiedades')
-  const search_filters = lastSearch?.args ?? null
-
   return NextResponse.json({
     text: result.text,
     properties: atlasProperties,
     references,
     search_filters,
+    debug,
     response_id: result.responseId,
     conversation_id: conversacion?.id,
   })

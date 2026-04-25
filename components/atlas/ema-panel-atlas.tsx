@@ -28,6 +28,7 @@ export function EmaPanelAtlas() {
     openDrawer,
     setProperties, setChapter,
     setIsSearching, setActiveFilters,
+    lastDebug, setLastDebug,
   } = useAtlasStore(
     useShallow((s) => ({
       emaPanelOpen: s.emaPanelOpen,
@@ -51,6 +52,8 @@ export function EmaPanelAtlas() {
       setChapter: s.setChapter,
       setIsSearching: s.setIsSearching,
       setActiveFilters: s.setActiveFilters,
+      lastDebug: s.lastDebug,
+      setLastDebug: s.setLastDebug,
     }))
   )
 
@@ -171,6 +174,12 @@ export function EmaPanelAtlas() {
       })
       if (data.response_id) setResponseId(data.response_id)
       if (data.search_filters) setActiveFilters(data.search_filters)
+      if (data.debug) {
+        setLastDebug(data.debug)
+        // Mirror to console so devs see the diagnostic without opening the admin panel
+        // eslint-disable-next-line no-console
+        console.log('[ema/chat] debug', data.debug)
+      }
 
       // Push AI-found properties into the catalog
       if (props.length > 0) {
@@ -441,6 +450,7 @@ export function EmaPanelAtlas() {
                       EMA está buscando…
                     </div>
                   )}
+                  {!emaProcessing && lastDebug && <DebugStrip debug={lastDebug} />}
                   <div ref={messagesEndRef} />
                 </div>
               )}
@@ -505,5 +515,94 @@ export function EmaPanelAtlas() {
         </div>
       </div>
     </div>
+  )
+}
+
+// ── DebugStrip ─────────────────────────────────────────────────────────────
+// Tiny diagnostic row shown beneath the latest assistant reply so the user
+// can see *what happened* without opening the admin panel.
+
+function DebugStrip({ debug }: { debug: any }) {
+  const path = debug?.used_path
+  const codes: string[] = debug?.extracted_codes ?? []
+  const inv = debug?.inventory_total
+  const tool = debug?.tool_results ?? 0
+  const fb = debug?.fallback_results ?? 0
+
+  // Big red banner if inventory is empty
+  if (inv === 0) {
+    return (
+      <div style={{
+        marginTop: 4,
+        padding: '10px 12px',
+        borderRadius: 10,
+        background: 'rgba(255,107,107,0.14)',
+        border: '1px solid rgba(255,107,107,0.4)',
+        fontSize: 11,
+        color: '#ffb4b4',
+        lineHeight: 1.4,
+      }}>
+        <strong>⚠ Inventario vacío en Supabase.</strong> Corre la migration 011 + el seed
+        para que EMA pueda traer propiedades.
+      </div>
+    )
+  }
+
+  // Yellow note when AI mentioned codes but DB had no match
+  const mentionedNotFound = codes.length > 0 && tool === 0 && fb === 0
+  if (mentionedNotFound) {
+    return (
+      <div style={{
+        marginTop: 4,
+        padding: '8px 10px',
+        borderRadius: 10,
+        background: 'rgba(255,200,80,0.12)',
+        border: '1px solid rgba(255,200,80,0.3)',
+        fontSize: 10,
+        color: '#ffd58a',
+        lineHeight: 1.4,
+      }}>
+        EMA mencionó {codes.length === 1 ? 'el código' : 'códigos'}{' '}
+        <strong>{codes.join(', ')}</strong>{' '}
+        — no están en el inventario actual.
+      </div>
+    )
+  }
+
+  if (path === 'none' && codes.length === 0) return null
+
+  // Standard inline diagnostic
+  return (
+    <div style={{
+      display: 'flex',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      gap: 5,
+      marginTop: 2,
+      fontSize: 9,
+      color: 'rgba(255,255,255,0.45)',
+      fontFamily: 'ui-monospace, SFMono-Regular, monospace',
+    }}>
+      <DebugPill label={path === 'tool' ? 'tool' : path === 'fallback' ? 'codes' : '—'} accent={path === 'tool'} />
+      <DebugPill label={`${tool + fb} props`} />
+      {codes.length > 0 && <DebugPill label={`${codes.length} códigos`} />}
+      {debug?.search_filters && Object.keys(debug.search_filters).length > 0 && (
+        <DebugPill label={`${Object.keys(debug.search_filters).length} filtros`} />
+      )}
+    </div>
+  )
+}
+
+function DebugPill({ label, accent = false }: { label: string; accent?: boolean }) {
+  return (
+    <span style={{
+      padding: '1px 5px',
+      borderRadius: 4,
+      background: accent ? 'rgba(64,217,157,0.18)' : 'rgba(255,255,255,0.06)',
+      color: accent ? '#4fffb4' : 'rgba(255,255,255,0.5)',
+      letterSpacing: '0.04em',
+    }}>
+      {label}
+    </span>
   )
 }

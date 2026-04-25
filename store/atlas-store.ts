@@ -27,6 +27,21 @@ export interface AtlasProperty {
   agent_insight: string | null
   tags: string[]
   mood: string
+  // Pinned by EMA in the latest reply — Chapter 2 puts these at the focus
+  spotlight?: boolean
+}
+
+export interface ChatDebug {
+  used_path: 'tool' | 'fallback' | 'none'
+  extracted_codes: string[]
+  codes_queried: string[]
+  tool_results: number
+  fallback_results: number
+  inventory_total: number | null
+  search_filters: Record<string, unknown> | null
+  tool_calls: string[]
+  assistant_id: string
+  empresa_id: string | null
 }
 
 export type AtlasChapter = 0 | 1 | 2 | 3
@@ -105,6 +120,10 @@ interface AtlasState {
   setSessionId: (id: string) => void
   hydrateMessages: (msgs: Array<{ role: 'user' | 'assistant'; text: string }>) => void
 
+  // Latest /api/chat debug payload — surfaced inline in EMA panel + admin logs
+  lastDebug: ChatDebug | null
+  setLastDebug: (d: ChatDebug | null) => void
+
   // Cashback calculator
   calcPrice: number
   calcType: 'Venta' | 'Arriendo'
@@ -166,6 +185,9 @@ export const useAtlasStore = create<AtlasState>((set, get) => ({
 
   setSessionId: (id) => set({ sessionId: id }),
   hydrateMessages: (msgs) => set({ emaMessages: msgs }),
+
+  lastDebug: null,
+  setLastDebug: (d) => set({ lastDebug: d }),
 
   calcPrice: 450_000_000,
   calcType: 'Venta',

@@ -35,6 +35,33 @@ function IntentBadge({ intent }: { intent: string }) {
   )
 }
 
+const DEBUG_BADGE_TONES = {
+  gray: 'bg-on-surface/5 text-on-surface/60',
+  green: 'bg-authority-green/10 text-authority-green',
+  teal: 'bg-brand-teal/10 text-brand-teal',
+  amber: 'bg-amber-100 text-amber-700',
+  red: 'bg-red-100 text-red-700',
+} as const
+
+function DebugBadge({
+  label,
+  tone = 'gray',
+}: {
+  label: string
+  tone?: keyof typeof DEBUG_BADGE_TONES
+}) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-mono font-semibold',
+        DEBUG_BADGE_TONES[tone]
+      )}
+    >
+      {label}
+    </span>
+  )
+}
+
 function ConversacionRow({ conv }: { conv: PortalConversacion }) {
   const [open, setOpen] = useState(false)
 
@@ -93,28 +120,70 @@ function ConversacionRow({ conv }: { conv: PortalConversacion }) {
           )}
           {conv.mensajes.map(m => {
             const intents: string[] = m.metadata?.intents ?? []
+            const dbg = m.metadata?.debug as
+              | undefined
+              | {
+                  used_path?: string
+                  extracted_codes?: string[]
+                  tool_results?: number
+                  fallback_results?: number
+                  inventory_total?: number | null
+                  search_filters?: Record<string, unknown> | null
+                  tool_calls?: string[]
+                }
             return (
-              <div key={m.id} className={cn('flex gap-2', m.rol === 'assistant' && 'flex-row-reverse')}>
-                <div className={cn(
-                  'max-w-[80%] rounded-xl px-3 py-2 text-sm',
-                  m.rol === 'user'
-                    ? 'bg-authority-green text-white rounded-bl-sm'
-                    : 'bg-surface-container-highest text-on-surface rounded-br-sm'
-                )}>
-                  <p className="leading-relaxed">{m.texto}</p>
-                  <div className="flex items-center gap-1 mt-1 flex-wrap">
-                    {intents.map(i => (
-                      <span key={i} className={cn(
-                        'text-[9px] font-bold uppercase px-1 rounded',
-                        m.rol === 'user' ? 'bg-white/20 text-white' : 'bg-authority-green/10 text-authority-green'
-                      )}>{i}</span>
-                    ))}
-                    <span className={cn(
-                      'text-[9px] ml-auto',
-                      m.rol === 'user' ? 'text-white/50' : 'text-on-surface/30'
-                    )}>{fmtDate(m.created_at)}</span>
+              <div key={m.id} className={cn('flex flex-col gap-1', m.rol === 'assistant' ? 'items-end' : 'items-start')}>
+                <div className={cn('flex gap-2 w-full', m.rol === 'assistant' && 'flex-row-reverse')}>
+                  <div className={cn(
+                    'max-w-[80%] rounded-xl px-3 py-2 text-sm',
+                    m.rol === 'user'
+                      ? 'bg-authority-green text-white rounded-bl-sm'
+                      : 'bg-surface-container-highest text-on-surface rounded-br-sm'
+                  )}>
+                    <p className="leading-relaxed">{m.texto}</p>
+                    <div className="flex items-center gap-1 mt-1 flex-wrap">
+                      {intents.map(i => (
+                        <span key={i} className={cn(
+                          'text-[9px] font-bold uppercase px-1 rounded',
+                          m.rol === 'user' ? 'bg-white/20 text-white' : 'bg-authority-green/10 text-authority-green'
+                        )}>{i}</span>
+                      ))}
+                      <span className={cn(
+                        'text-[9px] ml-auto',
+                        m.rol === 'user' ? 'text-white/50' : 'text-on-surface/30'
+                      )}>{fmtDate(m.created_at)}</span>
+                    </div>
                   </div>
                 </div>
+
+                {dbg && m.rol === 'assistant' && (
+                  <div className="flex flex-wrap gap-1 mt-0.5 max-w-[80%]">
+                    <DebugBadge label={`path: ${dbg.used_path ?? '?'}`} tone={
+                      dbg.used_path === 'tool' ? 'green' :
+                      dbg.used_path === 'fallback' ? 'amber' : 'gray'
+                    } />
+                    <DebugBadge label={`tool: ${dbg.tool_results ?? 0}`} />
+                    <DebugBadge label={`fallback: ${dbg.fallback_results ?? 0}`} />
+                    {(dbg.extracted_codes?.length ?? 0) > 0 && (
+                      <DebugBadge
+                        label={`códigos: ${dbg.extracted_codes!.join(', ')}`}
+                        tone="teal"
+                      />
+                    )}
+                    {dbg.inventory_total !== null && dbg.inventory_total !== undefined && (
+                      <DebugBadge
+                        label={`inv: ${dbg.inventory_total}`}
+                        tone={dbg.inventory_total === 0 ? 'red' : 'gray'}
+                      />
+                    )}
+                    {dbg.search_filters && Object.keys(dbg.search_filters).length > 0 && (
+                      <DebugBadge
+                        label={`filtros: ${Object.keys(dbg.search_filters).join(', ')}`}
+                        tone="teal"
+                      />
+                    )}
+                  </div>
+                )}
               </div>
             )
           })}
