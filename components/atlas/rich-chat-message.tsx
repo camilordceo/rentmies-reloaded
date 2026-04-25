@@ -74,7 +74,7 @@ export function RichChatMessage({
           seg.type === 'text' ? (
             <span key={i}>{seg.content}</span>
           ) : (
-            <CodeChip key={i} ref={seg.ref} onClick={() => onCodeClick(seg.ref.code)} />
+            <CodeChip key={i} parsed={seg.ref} onClick={() => onCodeClick(seg.ref.code)} />
           )
         )}
       </div>
@@ -104,11 +104,11 @@ export function RichChatMessage({
   )
 }
 
-function CodeChip({ ref, onClick }: { ref: ParsedReference; onClick: () => void }) {
+function CodeChip({ parsed, onClick }: { parsed: ParsedReference; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      title={`Abrir ${ref.code}`}
+      title={`Abrir ${parsed.code}`}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -133,8 +133,8 @@ function CodeChip({ ref, onClick }: { ref: ParsedReference; onClick: () => void 
         e.currentTarget.style.background = 'rgba(64,217,157,0.18)'
       }}
     >
-      <span style={{ fontSize: 8, opacity: 0.7 }}>{labelForSource(ref.source)}</span>
-      <span>{ref.code}</span>
+      <span style={{ fontSize: 8, opacity: 0.7 }}>{labelForSource(parsed.source)}</span>
+      <span>{parsed.code}</span>
       <span style={{ fontSize: 9, opacity: 0.6 }}>↗</span>
     </button>
   )
