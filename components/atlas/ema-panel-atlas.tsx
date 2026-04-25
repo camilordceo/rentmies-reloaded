@@ -7,6 +7,7 @@ import type { AtlasChapter } from '@/store/atlas-store'
 import { EmaSphere } from './ema-sphere'
 import { Waveform } from './waveform'
 import { EmaDictation } from './ema-dictation'
+import { RichChatMessage } from './rich-chat-message'
 
 const CHAPTER_LINES: Record<number, string[]> = {
   0: ['EMA escuchando.', 'Elige intenciones, o escríbeme.', 'Con 3 intenciones compongo tu curaduría.'],
@@ -26,6 +27,7 @@ export function EmaPanelAtlas() {
     sessionId, responseId, setResponseId,
     openDrawer,
     setProperties, setChapter,
+    setIsSearching,
   } = useAtlasStore(
     useShallow((s) => ({
       emaPanelOpen: s.emaPanelOpen,
@@ -47,6 +49,7 @@ export function EmaPanelAtlas() {
       openDrawer: s.openDrawer,
       setProperties: s.setProperties,
       setChapter: s.setChapter,
+      setIsSearching: s.setIsSearching,
     }))
   )
 
@@ -142,6 +145,7 @@ export function EmaPanelAtlas() {
     setInput('')
     addEmaMessage({ role: 'user', text: userMsg })
     setEmaProcessing(true)
+    setIsSearching(true)
     setEmaMode('dialogo')
 
     try {
@@ -156,30 +160,56 @@ export function EmaPanelAtlas() {
         }),
       })
       const data = await res.json()
-      addEmaMessage({ role: 'assistant', text: data.text })
+      const props = Array.isArray(data.properties) ? data.properties : []
+
+      addEmaMessage({
+        role: 'assistant',
+        text: data.text,
+        properties: props,
+        references: data.references ?? [],
+      })
       if (data.response_id) setResponseId(data.response_id)
 
-      // Push AI-found properties into the atlas store and jump to curation
-      if (Array.isArray(data.properties) && data.properties.length > 0) {
-        setProperties(data.properties)
-        setLastPropertyCount(data.properties.length)
+      // Push AI-found properties into the catalog
+      if (props.length > 0) {
+        setProperties(props)
+        setLastPropertyCount(props.length)
         setChapter(1 as AtlasChapter)
-        // Switch panel to Resumen so user sees the ranked property list
-        setEmaMode('resumen')
-        // Defer scroll one frame so the DOM state is settled
         requestAnimationFrame(() => {
           const rail = document.querySelector('.atlas-rail') as HTMLElement | null
           if (rail) rail.scrollTo({ left: window.innerWidth, behavior: 'smooth' })
         })
       }
 
-      // Speak the reply via ElevenLabs
       speakText(data.text)
     } catch {
       addEmaMessage({ role: 'assistant', text: 'Hubo un error. Intenta de nuevo.' })
     } finally {
       setEmaProcessing(false)
+      setIsSearching(false)
     }
+  }
+
+  // Click handler for code chips inside chat — open drawer for matching property
+  function handleCodeClick(code: string) {
+    const match = properties.find(
+      (p) =>
+        p.codigo === code ||
+        (p as any).codigo_finca_raiz === code ||
+        (p as any).codigo_metro_cuadrado === code ||
+        (p as any).codigo_domus === code
+    )
+    if (match) {
+      openDrawer(match)
+      return
+    }
+    // No match in current set — focus the rail on chapter 2 anyway so user
+    // can browse the full catalog
+    setChapter(1 as AtlasChapter)
+    requestAnimationFrame(() => {
+      const rail = document.querySelector('.atlas-rail') as HTMLElement | null
+      if (rail) rail.scrollTo({ left: window.innerWidth, behavior: 'smooth' })
+    })
   }
 
   // ─── Collapsed: floating bubble ────────────────────────────────────────────
@@ -382,24 +412,31 @@ export function EmaPanelAtlas() {
               {emaMessages.length === 0 ? (
                 <EmaDictation key={activeChapter} lines={CHAPTER_LINES[activeChapter] ?? CHAPTER_LINES[0]} />
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   {emaMessages.slice(-12).map((msg, i) => (
-                    <div key={i} style={{
-                      fontSize: msg.role === 'assistant' ? 14 : 12,
-                      color: msg.role === 'assistant' ? '#fff' : 'rgba(255,255,255,0.6)',
-                      fontWeight: msg.role === 'assistant' ? 500 : 400,
-                      lineHeight: 1.45,
-                      textAlign: msg.role === 'user' ? 'right' : 'left',
-                      background: msg.role === 'user' ? 'rgba(64,217,157,0.1)' : 'transparent',
-                      padding: msg.role === 'user' ? '8px 10px' : 0,
-                      borderRadius: 10,
-                    }}>
-                      {msg.text}
-                    </div>
+                    <RichChatMessage
+                      key={i}
+                      role={msg.role}
+                      text={msg.text}
+                      properties={msg.properties}
+                      references={msg.references}
+                      onPropertyClick={(p) => openDrawer(p)}
+                      onCodeClick={handleCodeClick}
+                    />
                   ))}
                   {emaProcessing && (
-                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' }}>
-                      EMA está pensando…
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      fontSize: 11, color: 'rgba(64,217,157,0.7)',
+                      fontStyle: 'italic',
+                      padding: '4px 0',
+                    }}>
+                      <span style={{
+                        width: 6, height: 6, borderRadius: '50%',
+                        background: '#4fffb4',
+                        animation: 'breathe 1s infinite',
+                      }} />
+                      EMA está buscando…
                     </div>
                   )}
                   <div ref={messagesEndRef} />

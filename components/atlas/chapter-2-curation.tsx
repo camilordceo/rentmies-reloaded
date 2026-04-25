@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { useAtlasStore, fmtCOP, computeMatchScore } from '@/store/atlas-store'
 import type { AtlasProperty } from '@/store/atlas-store'
 import { CashbackCoin } from './cashback-coin'
+import { SkeletonCard, SkeletonRailCard } from './skeleton-card'
 
 function getImg(p: AtlasProperty): string {
   return p.imagenes?.[0] ?? 'https://images.unsplash.com/photo-1613977257363-707ba9348227?w=1200&q=80'
@@ -16,12 +17,13 @@ function fmtPrice(p: AtlasProperty): string {
 }
 
 export function Chapter2Curation() {
-  const { properties, activeIntents, openDrawer, mouse } = useAtlasStore(
+  const { properties, activeIntents, openDrawer, mouse, isSearching } = useAtlasStore(
     useShallow((s) => ({
       properties: s.properties,
       activeIntents: s.activeIntents,
       openDrawer: s.openDrawer,
       mouse: s.mouse,
+      isSearching: s.isSearching,
     }))
   )
 
@@ -41,17 +43,44 @@ export function Chapter2Curation() {
         className="atlas-chapter"
         style={{
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          flexDirection: 'column',
           background: '#fcf9f8',
-          padding: '96px 72px 40px 140px',
+          padding: '88px 56px 32px 140px',
+          gap: 20,
         }}
       >
-        <div style={{ textAlign: 'center', color: '#6b7280' }}>
-          <div className="atlas-eyebrow" style={{ color: '#006c4a', marginBottom: 16 }}>
+        <div>
+          <div className="atlas-eyebrow" style={{ color: '#006c4a', marginBottom: 10 }}>
             Capítulo 02 · Curaduría viva
           </div>
-          <p style={{ fontSize: 16 }}>Cargando propiedades…</p>
+          <h2
+            className="atlas-display"
+            style={{ fontSize: 'clamp(28px, 3vw, 46px)', margin: 0, maxWidth: 620, lineHeight: 1.04 }}
+          >
+            {isSearching ? (
+              <>EMA está buscando para ti.<br /><span style={{ color: '#006c4a' }}>Componiendo tu curaduría…</span></>
+            ) : (
+              <>Aún sin propiedades.<br /><span style={{ color: '#006c4a' }}>Háblale a EMA para empezar.</span></>
+            )}
+          </h2>
+        </div>
+        <div
+          style={{
+            flex: 1,
+            display: 'grid',
+            gridTemplateColumns: '256px 1fr 300px',
+            gap: 18,
+            minHeight: 0,
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 7, padding: 16, background: '#fff', borderRadius: 20 }}>
+            {Array.from({ length: 5 }).map((_, i) => <SkeletonRailCard key={i} />)}
+          </div>
+          <SkeletonCard />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <SkeletonCard delay={120} />
+            <SkeletonCard delay={240} />
+          </div>
         </div>
       </section>
     )

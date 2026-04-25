@@ -1,5 +1,6 @@
 'use client'
 import { create } from 'zustand'
+import type { ParsedReference } from '@/lib/atlas-message-parser'
 export { fmtCOP, deriveMood, deriveTags, computeMatchScore } from '@/lib/atlas-helpers'
 
 export interface AtlasProperty {
@@ -66,10 +67,22 @@ interface AtlasState {
   sessionId: string
   responseId: string | null
   setResponseId: (id: string | null) => void
-  emaMessages: Array<{ role: 'user' | 'assistant'; text: string }>
-  addEmaMessage: (msg: { role: 'user' | 'assistant'; text: string }) => void
+  emaMessages: Array<{
+    role: 'user' | 'assistant'
+    text: string
+    properties?: AtlasProperty[]
+    references?: ParsedReference[]
+  }>
+  addEmaMessage: (msg: {
+    role: 'user' | 'assistant'
+    text: string
+    properties?: AtlasProperty[]
+    references?: ParsedReference[]
+  }) => void
   emaProcessing: boolean
   setEmaProcessing: (v: boolean) => void
+  isSearching: boolean
+  setIsSearching: (v: boolean) => void
 
   // Cashback calculator
   calcPrice: number
@@ -117,6 +130,8 @@ export const useAtlasStore = create<AtlasState>((set, get) => ({
   addEmaMessage: (msg) => set((s) => ({ emaMessages: [...s.emaMessages, msg] })),
   emaProcessing: false,
   setEmaProcessing: (v) => set({ emaProcessing: v }),
+  isSearching: false,
+  setIsSearching: (v) => set({ isSearching: v }),
 
   calcPrice: 450_000_000,
   calcType: 'Venta',

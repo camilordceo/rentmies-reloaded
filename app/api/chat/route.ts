@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { processMessage } from '@/lib/agent/orchestrator'
 import { extractPortalCode } from '@/lib/agent/tools/buscar-propiedades'
 import { deriveMood, deriveTags } from '@/lib/atlas-helpers'
+import { parseReferencesFromText } from '@/lib/atlas-message-parser'
 import type { AtlasProperty } from '@/store/atlas-store'
 
 export const maxDuration = 30
@@ -337,9 +338,13 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Parse references for the frontend so it can render clickable chips
+  const references = parseReferencesFromText(result.text)
+
   return NextResponse.json({
     text: result.text,
     properties: atlasProperties,
+    references,
     response_id: result.responseId,
     conversation_id: conversacion?.id,
   })
