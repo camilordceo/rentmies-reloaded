@@ -31,6 +31,17 @@ export interface AtlasProperty {
 
 export type AtlasChapter = 0 | 1 | 2 | 3
 
+export interface SearchFilters {
+  tipo_inmueble?: string | null
+  tipo_negocio?: string | null
+  ciudad?: string | null
+  barrio?: string | null
+  precio_min?: number | null
+  precio_max?: number | null
+  habitaciones_min?: number | null
+  area_min?: number | null
+}
+
 interface AtlasState {
   // Chapter navigation
   activeChapter: AtlasChapter
@@ -84,6 +95,16 @@ interface AtlasState {
   isSearching: boolean
   setIsSearching: (v: boolean) => void
 
+  // Active search filters from latest tool call
+  activeFilters: SearchFilters
+  setActiveFilters: (f: SearchFilters) => void
+  clearFilter: (key: keyof SearchFilters) => void
+  clearAllFilters: () => void
+
+  // Session id management
+  setSessionId: (id: string) => void
+  hydrateMessages: (msgs: Array<{ role: 'user' | 'assistant'; text: string }>) => void
+
   // Cashback calculator
   calcPrice: number
   calcType: 'Venta' | 'Arriendo'
@@ -132,6 +153,19 @@ export const useAtlasStore = create<AtlasState>((set, get) => ({
   setEmaProcessing: (v) => set({ emaProcessing: v }),
   isSearching: false,
   setIsSearching: (v) => set({ isSearching: v }),
+
+  activeFilters: {},
+  setActiveFilters: (f) => set({ activeFilters: f }),
+  clearFilter: (key) =>
+    set((s) => {
+      const next = { ...s.activeFilters }
+      delete next[key]
+      return { activeFilters: next }
+    }),
+  clearAllFilters: () => set({ activeFilters: {} }),
+
+  setSessionId: (id) => set({ sessionId: id }),
+  hydrateMessages: (msgs) => set({ emaMessages: msgs }),
 
   calcPrice: 450_000_000,
   calcType: 'Venta',

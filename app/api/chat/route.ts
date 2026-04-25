@@ -341,10 +341,17 @@ export async function POST(req: NextRequest) {
   // Parse references for the frontend so it can render clickable chips
   const references = parseReferencesFromText(result.text)
 
+  // Pull the most recent buscar_propiedades tool args for filter chips
+  const lastSearch = [...result.toolCalls]
+    .reverse()
+    .find((t) => t.name === 'buscar_propiedades')
+  const search_filters = lastSearch?.args ?? null
+
   return NextResponse.json({
     text: result.text,
     properties: atlasProperties,
     references,
+    search_filters,
     response_id: result.responseId,
     conversation_id: conversacion?.id,
   })

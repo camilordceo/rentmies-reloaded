@@ -7,10 +7,16 @@ import type { Conversacion, AgenteIA } from '../types'
 
 const MAX_ITERATIONS = 5
 
+export interface AgentToolCall {
+  name: string
+  args: Record<string, unknown>
+}
+
 export interface AgentResult {
   text: string
   properties: any[]
   responseId: string
+  toolCalls: AgentToolCall[]
 }
 
 export async function processMessage(params: {
@@ -24,6 +30,7 @@ export async function processMessage(params: {
   }
   const db = createAdminClient()
   const collectedProperties: any[] = []
+  const collectedToolCalls: AgentToolCall[] = []
 
   let apiResponse = await callResponsesAPI({
     assistant_id: whatsappAI.assistant_id,
@@ -48,6 +55,7 @@ export async function processMessage(params: {
         let result: unknown
         try {
           const args = JSON.parse(toolCall.arguments) as Record<string, unknown>
+          collectedToolCalls.push({ name: toolCall.name, args })
           result = await executeToolCall(toolCall.name, args, whatsappAI.empresa_id)
           // Collect property results for portal frontend
           if (toolCall.name === 'buscar_propiedades' && Array.isArray(result)) {
@@ -88,5 +96,6 @@ export async function processMessage(params: {
     text: apiResponse.output_text,
     properties: collectedProperties,
     responseId: apiResponse.next_previous_response_id,
+    toolCalls: collectedToolCalls,
   }
 }

@@ -5,6 +5,7 @@ import { useAtlasStore, fmtCOP, computeMatchScore } from '@/store/atlas-store'
 import type { AtlasProperty } from '@/store/atlas-store'
 import { CashbackCoin } from './cashback-coin'
 import { SkeletonCard, SkeletonRailCard } from './skeleton-card'
+import { ConversationFilters } from './conversation-filters'
 
 function getImg(p: AtlasProperty): string {
   return p.imagenes?.[0] ?? 'https://images.unsplash.com/photo-1613977257363-707ba9348227?w=1200&q=80'
@@ -101,7 +102,7 @@ export function Chapter2Curation() {
     >
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <div>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div className="atlas-eyebrow" style={{ color: '#006c4a', marginBottom: 10 }}>
             Capítulo 02 · Curaduría viva
           </div>
@@ -112,8 +113,9 @@ export function Chapter2Curation() {
             {sorted.length} propiedades reordenadas por ti.<br />
             <span style={{ color: '#006c4a' }}>Las mejores flotan al frente.</span>
           </h2>
+          <ConversationFilters />
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <span
             style={{
               width: 8,

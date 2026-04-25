@@ -27,7 +27,7 @@ export function EmaPanelAtlas() {
     sessionId, responseId, setResponseId,
     openDrawer,
     setProperties, setChapter,
-    setIsSearching,
+    setIsSearching, setActiveFilters,
   } = useAtlasStore(
     useShallow((s) => ({
       emaPanelOpen: s.emaPanelOpen,
@@ -50,6 +50,7 @@ export function EmaPanelAtlas() {
       setProperties: s.setProperties,
       setChapter: s.setChapter,
       setIsSearching: s.setIsSearching,
+      setActiveFilters: s.setActiveFilters,
     }))
   )
 
@@ -169,6 +170,7 @@ export function EmaPanelAtlas() {
         references: data.references ?? [],
       })
       if (data.response_id) setResponseId(data.response_id)
+      if (data.search_filters) setActiveFilters(data.search_filters)
 
       // Push AI-found properties into the catalog
       if (props.length > 0) {
